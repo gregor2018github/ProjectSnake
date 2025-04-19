@@ -34,6 +34,13 @@ class Screen:
     def draw_score(self, score):
         score_text = self.font.render(f'Score: {score}', True, C.TEXT_COLOR)
         self.surface.blit(score_text, C.SCORE_POS)
+        
+    def draw_level(self, level):
+        """Draws the current level on screen"""
+        level_text = self.font.render(f'Level: {level}', True, C.TEXT_COLOR)
+        # Position level text to the right of the score
+        level_pos = (C.SCORE_POS[0] + 150, C.SCORE_POS[1])
+        self.surface.blit(level_text, level_pos)
 
     def draw_game_over_message(self, score):
         """Draws only the 'Game Over! Score: X' message."""

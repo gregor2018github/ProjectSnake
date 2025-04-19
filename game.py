@@ -24,6 +24,7 @@ class Game:
         self.apple_eat_sound = None
         self.bite_self_sound = None
         self.bite_obstacle_sound = None
+        self.remove_obstacle_sound = None
 
         # Load sound effects individually
         try:
@@ -40,6 +41,11 @@ class Game:
             self.bite_obstacle_sound = mixer.Sound(C.BITE_OBSTACLE_SOUND_FILE)
         except pygame.error as e:
             print(f"Warning: Could not load bite obstacle sound ({C.BITE_OBSTACLE_SOUND_FILE}): {e}")
+        
+        try:
+            self.remove_obstacle_sound = mixer.Sound(C.REMOVE_OBSTACLE_SOUND_FILE)
+        except pygame.error as e:
+            print(f"Warning: Could not load remove obstacle sound ({C.REMOVE_OBSTACLE_SOUND_FILE}): {e}")
 
         self.reset()
 
@@ -57,6 +63,10 @@ class Game:
 
     def _add_obstacle(self):
         """ Adds a new obstacle in a random, unoccupied grid location. """
+        # Don't add obstacles in level 2
+        if self.level == 2:
+            return
+            
         while True:
             x = random.randint(0, C.GRID_WIDTH - 1)
             y = random.randint(0, C.GRID_HEIGHT - 1)
@@ -69,6 +79,23 @@ class Game:
             if new_obstacle_pos not in occupied:
                 self.obstacles.append(Obstacle(x, y))
                 break
+
+    def _check_level_update(self):
+        """Checks if the player should advance to the next level"""
+        if self.level == 1 and self.score >= C.LEVEL_2_SCORE:
+            self.level = 2
+            
+    def _update_level_mechanics(self):
+        """Updates level-specific mechanics"""
+        if self.level == 2:
+            # In level 2, remove an obstacle every OBSTACLE_REMOVAL_INTERVAL frames
+            if len(self.obstacles) > 0 and self.frame_counter % C.OBSTACLE_REMOVAL_INTERVAL == 0:
+                self.obstacles.pop(0)  # Remove the first obstacle
+                if self.remove_obstacle_sound:
+                    self.remove_obstacle_sound.play()
+                
+        # Increment frame counter
+        self.frame_counter += 1
 
     def handle_events(self):
         """ Processes player input and game events. """
@@ -93,6 +120,12 @@ class Game:
             if self.bite_self_sound: 
                 self.bite_self_sound.play()
             self.game_over()
+            
+        # Check if player advances to next level
+        self._check_level_update()
+        
+        # Apply level-specific mechanics
+        self._update_level_mechanics()
 
     def check_collisions(self):
         """ Checks for collisions between game objects. """
@@ -129,6 +162,7 @@ class Game:
         for obstacle in self.obstacles:
             self.screen.draw_element(obstacle)
         self.screen.draw_score(self.score)
+        self.screen.draw_level(self.level)
         self.screen.update()
 
     def check_and_update_high_scores(self, current_score):
@@ -238,6 +272,8 @@ class Game:
         self.obstacles = [] # Start with no obstacles
         self.apple = self._create_initial_apple()
         self.score = 0
+        self.level = 1
+        self.frame_counter = 0
         self.game_speed = C.SNAKE_SPEED_INITIAL
         # self.running should already be True if reset is called from game_over
         # If called initially, set it here.

@@ -9,6 +9,10 @@ GRID_SIZE = 20
 GRID_WIDTH = SCREEN_WIDTH // GRID_SIZE
 GRID_HEIGHT = SCREEN_HEIGHT // GRID_SIZE
 
+# Level System Constants
+LEVEL_2_SCORE = 20
+OBSTACLE_REMOVAL_INTERVAL = 4
+
 # Snake Constants
 SNAKE_START_LENGTH = 5
 SNAKE_START_POS = (GRID_WIDTH // 2, GRID_HEIGHT // 2)  # Start in grid coordinates
@@ -31,11 +35,13 @@ try:
     APPLE_EAT_SOUND_FILE = os.path.join(SOUND_FOLDER, "apple-eat.wav")
     BITE_SELF_SOUND_FILE = os.path.join(SOUND_FOLDER, "bite-self.wav")
     BITE_OBSTACLE_SOUND_FILE = os.path.join(SOUND_FOLDER, "bite-obstacle.wav")
+    REMOVE_OBSTACLE_SOUND_FILE = os.path.join(SOUND_FOLDER, "remove-obstacle.wav")
 except FileNotFoundError:
     print("Sound files not found. Ensure the 'Files/Sound' directory exists and contains the required sound files.")
     APPLE_EAT_SOUND_FILE = None
     BITE_SELF_SOUND_FILE = None
     BITE_OBSTACLE_SOUND_FILE = None
+    REMOVE_OBSTACLE_SOUND_FILE = None
 
 # UI and Display Constants
 BACKGROUND_COLOR = (0, 0, 0)
