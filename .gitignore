@@ -1,0 +1,19 @@
+# Python virtual environment
+venv/
+env/
+*.env
+snake_envi/
+
+# Python bytecode and compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+
+# Specific files to ignore
+test_lab.py
