@@ -8,7 +8,7 @@ from pygame import mixer # Import mixer
 # Use absolute imports
 import constants as C
 import high_scores as hs
-from game_objects import Snake, Apple, Obstacle
+from game_objects import Snake, Apple, Obstacle, MovingObstacle
 from screen import Screen
 
 class Game:
@@ -53,6 +53,7 @@ class Game:
         """ Returns a list of grid coordinates occupied by the snake and obstacles. """
         occupied = list(self.snake.positions) # Snake body positions
         occupied.extend([(ob.x, ob.y) for ob in self.obstacles]) # Obstacle positions
+        occupied.extend([(mo.x, mo.y) for mo in self.moving_obstacles])  # Moving obstacle positions
         return occupied
 
     def _create_initial_apple(self):
@@ -80,6 +81,21 @@ class Game:
                 self.obstacles.append(Obstacle(x, y))
                 break
 
+    def _add_moving_obstacle(self):
+        """ Adds a new moving obstacle in a random, unoccupied grid location. """
+        while True:
+            x = random.randint(0, C.GRID_WIDTH - 1)
+            y = random.randint(0, C.GRID_HEIGHT - 1)
+            new_obstacle_pos = (x, y)
+
+            # Check against snake, existing obstacles, and the apple
+            occupied = self._get_occupied_positions()
+            occupied.append((self.apple.x, self.apple.y)) # Include apple position
+
+            if new_obstacle_pos not in occupied:
+                self.moving_obstacles.append(MovingObstacle(x, y))
+                break
+
     def _check_level_update(self):
         """Checks if the player should advance to the next level"""
         if self.level == 1 and self.score >= C.LEVEL_2_SCORE:
@@ -93,6 +109,10 @@ class Game:
                 self.obstacles.pop(0)  # Remove the first obstacle
                 if self.remove_obstacle_sound:
                     self.remove_obstacle_sound.play()
+                
+        # Update moving obstacles
+        for moving_obstacle in self.moving_obstacles:
+            moving_obstacle.update(self.snake, self.obstacles)
                 
         # Increment frame counter
         self.frame_counter += 1
@@ -135,8 +155,14 @@ class Game:
             self.snake.grow()
             if self.apple_eat_sound: 
                 self.apple_eat_sound.play()
-            self._add_obstacle() # Add obstacle when apple is eaten
-            # Respawn apple, ensuring it's not on the new obstacle or snake
+                
+            # Level-specific behaviors when apple is eaten
+            if self.level == 1:
+                self._add_obstacle() # Add obstacle when apple is eaten in level 1
+            else:
+                self._add_moving_obstacle() # Add moving obstacle when apple is eaten in level 2
+                
+            # Respawn apple, ensuring it's not on the snake or obstacles
             self.apple.respawn(self._get_occupied_positions())
 
         # Snake hitting obstacles
@@ -144,15 +170,13 @@ class Game:
             if self.bite_obstacle_sound: 
                 self.bite_obstacle_sound.play()
             self.game_over()
-
-        # Wall collision check (only if WALL_COLLISION is True in constants)
-        # Note: The wall collision logic is now primarily handled within snake.move()
-        # This section might be redundant if snake.move() already returns False on wall hit.
-        # if C.WALL_COLLISION:
-        #     head_x, head_y = self.snake.get_head_position()
-        #     if not (0 <= head_x < C.GRID_WIDTH and 0 <= head_y < C.GRID_HEIGHT):
-        #         self.game_over()
-
+            
+        # Snake head hitting moving obstacles
+        for moving_obstacle in self.moving_obstacles:
+            if moving_obstacle.collides_with_snake_head(self.snake):
+                if self.bite_obstacle_sound:
+                    self.bite_obstacle_sound.play()
+                self.game_over()
 
     def draw(self):
         """ Draws all game elements onto the screen. """
@@ -161,6 +185,8 @@ class Game:
         self.screen.draw_element(self.apple)
         for obstacle in self.obstacles:
             self.screen.draw_element(obstacle)
+        for moving_obstacle in self.moving_obstacles:
+            self.screen.draw_element(moving_obstacle)
         self.screen.draw_score(self.score)
         self.screen.draw_level(self.level)
         self.screen.update()
@@ -258,8 +284,9 @@ class Game:
                 elif event.type == KEYDOWN:
                     if event.key == K_ESCAPE:
                         self.running = False # Quit on ESC
-                    # Any other key press restarts the game
-                    waiting_for_input = False # Exit loop to restart or quit
+                    elif event.key == K_RETURN:
+                    # Enter restarts the game
+                        waiting_for_input = False # Exit loop to restart or quit
 
         # If the game is still running (i.e., didn't quit), reset for a new game
         if self.running:
@@ -270,6 +297,7 @@ class Game:
         """ Resets the game state for a new game. """
         self.snake = Snake()
         self.obstacles = [] # Start with no obstacles
+        self.moving_obstacles = [] # Start with no moving obstacles
         self.apple = self._create_initial_apple()
         self.score = 0
         self.level = 1

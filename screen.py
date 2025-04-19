@@ -84,7 +84,7 @@ class Screen:
         self.surface.blit(text_surface, text_rect)
 
     def show_restart_prompt(self):
-        prompt_text = self.prompt_font.render("Press any key to restart (ESC to quit)", True, C.TEXT_COLOR)
+        prompt_text = self.prompt_font.render("Press ENTER to restart (ESC to quit)", True, C.TEXT_COLOR)
         prompt_rect = prompt_text.get_rect(center=C.RESTART_PROMPT_POS)
         self.surface.blit(prompt_text, prompt_rect)
 

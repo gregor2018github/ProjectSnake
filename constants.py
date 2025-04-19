@@ -10,7 +10,7 @@ GRID_WIDTH = SCREEN_WIDTH // GRID_SIZE
 GRID_HEIGHT = SCREEN_HEIGHT // GRID_SIZE
 
 # Level System Constants
-LEVEL_2_SCORE = 20
+LEVEL_2_SCORE = 25
 OBSTACLE_REMOVAL_INTERVAL = 4
 
 # Snake Constants
@@ -28,6 +28,11 @@ APPLE_SIZE = (GRID_SIZE, GRID_SIZE)
 # Obstacle Constants
 OBSTACLE_COLOR = (100, 100, 100)  # Gray
 OBSTACLE_SIZE = (GRID_SIZE, GRID_SIZE)
+
+# Moving Obstacle Constants
+MOVING_OBSTACLE_COLOR = (120, 100, 140)  # Orange
+MOVING_OBSTACLE_SIZE = (GRID_SIZE, GRID_SIZE)
+MOVING_OBSTACLE_SPEED = 0.1  # Grid cells per frame
 
 # Sound Constants
 SOUND_FOLDER = os.path.join("Files", "Sound")

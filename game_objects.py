@@ -125,3 +125,78 @@ class Obstacle(GameObject):
     """ Represents an obstacle """
     def __init__(self, x, y):
         super().__init__(x, y, C.OBSTACLE_SIZE[0], C.OBSTACLE_SIZE[1], C.OBSTACLE_COLOR)
+
+class MovingObstacle(GameObject):
+    """ Represents a moving obstacle """
+    def __init__(self, x, y):
+        super().__init__(x, y, C.MOVING_OBSTACLE_SIZE[0], C.MOVING_OBSTACLE_SIZE[1], C.MOVING_OBSTACLE_COLOR)
+        # Randomly assign an initial direction
+        self.dx = random.choice([-1, 1]) * C.MOVING_OBSTACLE_SPEED
+        self.dy = random.choice([-1, 1]) * C.MOVING_OBSTACLE_SPEED
+        # Store the actual position as floats for smoother movement
+        self.float_x = float(x)
+        self.float_y = float(y)
+        
+    def update(self, snake, obstacles):
+        # Update the floating position
+        self.float_x += self.dx
+        self.float_y += self.dy
+        
+        # Update the integer grid position (rounded down)
+        new_x = int(self.float_x)
+        new_y = int(self.float_y)
+        
+        # Handle wall collisions
+        if C.WALL_COLLISION:
+            # Bounce off walls
+            if new_x < 0:
+                self.float_x = 0
+                self.dx = -self.dx
+            elif new_x >= C.GRID_WIDTH:
+                self.float_x = C.GRID_WIDTH - 1
+                self.dx = -self.dx
+                
+            if new_y < 0:
+                self.float_y = 0
+                self.dy = -self.dy
+            elif new_y >= C.GRID_HEIGHT:
+                self.float_y = C.GRID_HEIGHT - 1
+                self.dy = -self.dy
+        else:
+            # Wrap around
+            if new_x < 0:
+                self.float_x = C.GRID_WIDTH - 1
+            elif new_x >= C.GRID_WIDTH:
+                self.float_x = 0
+                
+            if new_y < 0:
+                self.float_y = C.GRID_HEIGHT - 1
+            elif new_y >= C.GRID_HEIGHT:
+                self.float_y = 0
+        
+        # Update the grid coordinates
+        self.x = int(self.float_x)
+        self.y = int(self.float_y)
+        
+        # Check collision with snake body (not head)
+        for segment in snake.get_body_positions():
+            if (self.x, self.y) == segment:
+                # Bounce off snake body
+                self.dx = -self.dx
+                self.dy = -self.dy
+                break
+                
+        # Check collision with regular obstacles
+        for obstacle in obstacles:
+            if self.x == obstacle.x and self.y == obstacle.y:
+                # Bounce off obstacle
+                self.dx = -self.dx
+                self.dy = -self.dy
+                break
+                
+        # Update the rect for rendering
+        self.update_rect()
+        
+    def collides_with_snake_head(self, snake):
+        head_x, head_y = snake.get_head_position()
+        return self.x == head_x and self.y == head_y
