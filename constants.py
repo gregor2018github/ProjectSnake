@@ -10,11 +10,12 @@ GRID_WIDTH = SCREEN_WIDTH // GRID_SIZE
 GRID_HEIGHT = SCREEN_HEIGHT // GRID_SIZE
 
 # Level System Constants
-LEVEL_2_SCORE = 25
+LEVEL_2_SCORE = 5
 OBSTACLE_REMOVAL_INTERVAL = 4
 
 # Snake Constants
-SNAKE_START_LENGTH = 5
+SNAKE_USE_FLOAT_MOVEMENT = False # Set to True for smooth snake movement
+SNAKE_START_LENGTH = 25
 SNAKE_START_POS = (GRID_WIDTH // 2, GRID_HEIGHT // 2)  # Start in grid coordinates
 SNAKE_START_DIR = (0, 1)  # (dx, dy) -> Down
 SNAKE_SPEED_INITIAL = 10  # Ticks per second
@@ -30,6 +31,7 @@ OBSTACLE_COLOR = (100, 100, 100)  # Gray
 OBSTACLE_SIZE = (GRID_SIZE, GRID_SIZE)
 
 # Moving Obstacle Constants
+MOVING_OBSTACLE_USE_FLOAT_COLLISION = True # Set to True for smooth snake/moving_obstacle collision
 MOVING_OBSTACLE_COLOR = (120, 100, 140)  # Orange
 MOVING_OBSTACLE_SIZE = (GRID_SIZE, GRID_SIZE)
 MOVING_OBSTACLE_SPEED = 0.1  # Grid cells per frame
