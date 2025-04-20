@@ -153,28 +153,35 @@ class MovingObstacle(GameObject):
         self.float_x += self.dx
         self.float_y += self.dy
 
-        # Update the integer grid position (rounded down) for collision logic
+        # Calculate current screen rectangle for collision detection
+        current_screen_x = self.float_x * C.GRID_SIZE
+        current_screen_y = self.float_y * C.GRID_SIZE
+        obstacle_rect = pygame.Rect(current_screen_x, current_screen_y, self.width, self.height)
+
+        # Update the integer grid position (rounded down) for other logic if needed
         new_x = int(self.float_x)
         new_y = int(self.float_y)
 
-        # Handle wall collisions
+        # Handle wall collisions (wrap around or bounce)
         if C.WALL_COLLISION:
             # Bounce off walls
-            if new_x < 0:
+            if obstacle_rect.left < 0:
                 self.float_x = 0
                 self.dx = -self.dx
-            elif new_x >= C.GRID_WIDTH:
-                # Adjust float_x to be just inside the boundary before reversing
-                self.float_x = float(C.GRID_WIDTH - 1) # Use float for consistency
+                obstacle_rect.left = 0 # Adjust rect after changing float_x
+            elif obstacle_rect.right > C.SCREEN_WIDTH:
+                self.float_x = (C.SCREEN_WIDTH - self.width) / C.GRID_SIZE
                 self.dx = -self.dx
+                obstacle_rect.right = C.SCREEN_WIDTH # Adjust rect
 
-            if new_y < 0:
+            if obstacle_rect.top < 0:
                 self.float_y = 0
                 self.dy = -self.dy
-            elif new_y >= C.GRID_HEIGHT:
-                # Adjust float_y to be just inside the boundary before reversing
-                self.float_y = float(C.GRID_HEIGHT - 1) # Use float for consistency
+                obstacle_rect.top = 0 # Adjust rect
+            elif obstacle_rect.bottom > C.SCREEN_HEIGHT:
+                self.float_y = (C.SCREEN_HEIGHT - self.height) / C.GRID_SIZE
                 self.dy = -self.dy
+                obstacle_rect.bottom = C.SCREEN_HEIGHT # Adjust rect
         else:
             # Wrap around - adjust float position for smooth wrapping
             if self.float_x < 0:
@@ -186,34 +193,42 @@ class MovingObstacle(GameObject):
                 self.float_y += C.GRID_HEIGHT
             elif self.float_y >= C.GRID_HEIGHT:
                 self.float_y -= C.GRID_HEIGHT
+            # Update rect based on wrapped float position for subsequent checks
+            current_screen_x = self.float_x * C.GRID_SIZE
+            current_screen_y = self.float_y * C.GRID_SIZE
+            obstacle_rect = pygame.Rect(current_screen_x, current_screen_y, self.width, self.height)
 
-        # Update the grid coordinates used for collision detection
+        # Update the grid coordinates used for collision detection with static obstacles
         self.x = int(self.float_x)
         self.y = int(self.float_y)
 
-        # Check collision with snake body (not head) using grid coordinates
-        for segment in snake.get_body_positions():
-            if (self.x, self.y) == segment:
+        # Check collision with snake body (not head) using rectangle collision
+        collided_with_body = False
+        for seg_x, seg_y in snake.get_body_positions():
+            segment_rect = pygame.Rect(seg_x * C.GRID_SIZE, seg_y * C.GRID_SIZE, C.GRID_SIZE, C.GRID_SIZE)
+            if obstacle_rect.colliderect(segment_rect):
                 # Bounce off snake body
                 self.dx = -self.dx
                 self.dy = -self.dy
                 # Optional: Move slightly away after bounce to prevent sticking
                 self.float_x += self.dx * 0.1
                 self.float_y += self.dy * 0.1
-                break
+                collided_with_body = True
+                break # Only bounce once per frame
 
-        # Check collision with regular obstacles using grid coordinates
-        # Convert obstacle list to only contain Obstacle instances if needed
-        static_obstacles = [ob for ob in obstacles if isinstance(ob, Obstacle)]
-        for obstacle in static_obstacles:
-            if self.x == obstacle.x and self.y == obstacle.y:
-                # Bounce off obstacle
-                self.dx = -self.dx
-                self.dy = -self.dy
-                # Optional: Move slightly away
-                self.float_x += self.dx * 0.1
-                self.float_y += self.dy * 0.1
-                break
+        # Check collision with regular obstacles using grid coordinates (or rect collision if preferred)
+        if not collided_with_body: # Avoid double collision checks if already bounced off snake
+            static_obstacles = [ob for ob in obstacles if isinstance(ob, Obstacle)]
+            for obstacle in static_obstacles:
+                # Using rect collision for consistency, though grid check might suffice here
+                if obstacle_rect.colliderect(obstacle.rect):
+                    # Bounce off obstacle
+                    self.dx = -self.dx
+                    self.dy = -self.dy
+                    # Optional: Move slightly away
+                    self.float_x += self.dx * 0.1
+                    self.float_y += self.dy * 0.1
+                    break
 
     def draw(self, surface):
         # Draw based on the floating-point position for smooth movement
@@ -225,6 +240,13 @@ class MovingObstacle(GameObject):
         pygame.draw.rect(surface, self.color, draw_rect)
 
     def collides_with_snake_head(self, snake):
-        # Original grid-based collision check
+        # Use rectangle collision based on screen coordinates
         head_x, head_y = snake.get_head_position()
-        return self.x == head_x and self.y == head_y
+        head_rect = pygame.Rect(head_x * C.GRID_SIZE, head_y * C.GRID_SIZE, C.GRID_SIZE, C.GRID_SIZE)
+
+        # Calculate obstacle's current screen rectangle
+        obstacle_screen_x = self.float_x * C.GRID_SIZE
+        obstacle_screen_y = self.float_y * C.GRID_SIZE
+        obstacle_rect = pygame.Rect(obstacle_screen_x, obstacle_screen_y, self.width, self.height)
+
+        return obstacle_rect.colliderect(head_rect)

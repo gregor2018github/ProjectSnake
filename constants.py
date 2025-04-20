@@ -15,7 +15,7 @@ OBSTACLE_REMOVAL_INTERVAL = 4
 
 # Snake Constants
 SNAKE_USE_FLOAT_MOVEMENT = False # Set to True for smooth snake movement
-SNAKE_START_LENGTH = 25
+SNAKE_START_LENGTH = 5
 SNAKE_START_POS = (GRID_WIDTH // 2, GRID_HEIGHT // 2)  # Start in grid coordinates
 SNAKE_START_DIR = (0, 1)  # (dx, dy) -> Down
 SNAKE_SPEED_INITIAL = 10  # Ticks per second
