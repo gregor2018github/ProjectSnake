@@ -110,27 +110,63 @@ class Game:
 
     def _check_level_update(self):
         """Checks if the player should advance to the next level"""
+        previous_level = self.level
+        
         if self.level == 1 and self.score >= C.LEVEL_2_SCORE:
             self.level = 2
+            # Flag to start removing static obstacles when transitioning to level 2
+            self.removing_static_obstacles = True
         elif self.level == 2 and self.score >= C.LEVEL_3_SCORE:
             self.level = 3
+            # Flag to start removing orthogonal obstacles when transitioning to level 3
+            self.removing_orthogonal_obstacles = True
         elif self.level == 3 and self.score >= C.LEVEL_4_SCORE:
             self.level = 4
-            
+            # Flag to start removing diagonal obstacles when transitioning to level 4
+            self.removing_diagonal_obstacles = True
+
     def _update_level_mechanics(self):
         """Updates level-specific mechanics"""
         if self.level == 2:
-            # In level 2, remove an obstacle every OBSTACLE_REMOVAL_INTERVAL frames
+            # In level 2, remove static obstacles with gray dust
             if len(self.obstacles) > 0 and self.frame_counter % C.OBSTACLE_REMOVAL_INTERVAL == 0:
-                self.obstacles.pop(0)  # Remove the first obstacle
+                obstacle_to_remove = self.obstacles.pop(0)  # Remove the first obstacle
                 if self.remove_obstacle_sound:
                     self.remove_obstacle_sound.play()
-        elif self.level == 3:
-            # In level 3, remove all orthogonal moving obstacles every OBSTACLE_REMOVAL_INTERVAL frames
-            if len(self.moving_obstacles) > 0 and self.frame_counter % C.OBSTACLE_REMOVAL_INTERVAL == 0:
-                self.moving_obstacles = [mo for mo in self.moving_obstacles if not isinstance(mo, OrthogonalMovingObstacle)]
+                # Create gray dust particles for static obstacles
+                self.particle_effects.append(ParticleEffect(obstacle_to_remove.x, obstacle_to_remove.y, "obstacle_static"))
+        
+        # Handle orthogonal obstacle removal with orange dust
+        if self.removing_orthogonal_obstacles and self.frame_counter % C.MOVING_OBSTACLE_REMOVAL_INTERVAL == 0:
+            orthogonal_obstacles = [obstacle for obstacle in self.moving_obstacles 
+                                    if isinstance(obstacle, OrthogonalMovingObstacle)]
+            if orthogonal_obstacles:
+                # Remove the first orthogonal obstacle
+                obstacle_to_remove = orthogonal_obstacles[0]
+                self.moving_obstacles.remove(obstacle_to_remove)
+                # Play removal sound
                 if self.remove_obstacle_sound:
                     self.remove_obstacle_sound.play()
+                # Create orange dust particles
+                self.particle_effects.append(ParticleEffect(obstacle_to_remove.x, obstacle_to_remove.y, "obstacle_orthogonal"))
+            else:
+                self.removing_orthogonal_obstacles = False
+        
+        # Handle diagonal obstacle removal with purple dust
+        if hasattr(self, 'removing_diagonal_obstacles') and self.removing_diagonal_obstacles and self.frame_counter % C.MOVING_OBSTACLE_REMOVAL_INTERVAL == 0:
+            diagonal_obstacles = [obstacle for obstacle in self.moving_obstacles 
+                                if isinstance(obstacle, MovingObstacle) and not isinstance(obstacle, OrthogonalMovingObstacle)]
+            if diagonal_obstacles:
+                # Remove the first diagonal obstacle
+                obstacle_to_remove = diagonal_obstacles[0]
+                self.moving_obstacles.remove(obstacle_to_remove)
+                # Play removal sound
+                if self.remove_obstacle_sound:
+                    self.remove_obstacle_sound.play()
+                # Create purple dust particles
+                self.particle_effects.append(ParticleEffect(obstacle_to_remove.x, obstacle_to_remove.y, "obstacle_diagonal"))
+            else:
+                self.removing_diagonal_obstacles = False
                 
         # Update moving obstacles
         for moving_obstacle in self.moving_obstacles:
@@ -338,6 +374,9 @@ class Game:
         self.level = 1
         self.frame_counter = 0
         self.game_speed = C.SNAKE_SPEED_INITIAL
+        # Flag to track if we need to remove orthogonal obstacles gradually
+        self.removing_orthogonal_obstacles = False
+        self.orthogonal_removal_counter = 0
         # self.running should already be True if reset is called from game_over
         # If called initially, set it here.
         self.running = True

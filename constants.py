@@ -16,13 +16,17 @@ PARTICLE_MAX_SIZE = 5
 PARTICLE_MIN_SPEED = 0.4
 PARTICLE_MAX_SPEED = 0.95
 PARTICLE_LIFESPAN = 20  # Duration in ticks
-PARTICLE_COLORS = [(255, 0, 0), (255, 50, 0), (255, 20, 20)]  # Variations of red
+PARTICLE_COLORS_APPLE = [(255, 0, 0), (255, 50, 0), (255, 20, 20)]  # Variations of red
+PARTICLE_COLORS_OBSTACLE_STATIC = [(130, 130, 130), (160, 160, 160), (100, 100, 100)]  # Gray variations
+PARTICLE_COLORS_OBSTACLE_ORTHOGONAL = [(220, 120, 60), (240, 140, 80), (200, 100, 40)]  # Orange variations
+PARTICLE_COLORS_OBSTACLE_DIAGONAL = [(150, 110, 200), (170, 130, 220), (130, 90, 180)]  # Purple variations
 
 # Level System Constants
 LEVEL_2_SCORE = 5
 LEVEL_3_SCORE = 10
 LEVEL_4_SCORE = 15
 OBSTACLE_REMOVAL_INTERVAL = 4 # every x ticks one obstacle is removed
+MOVING_OBSTACLE_REMOVAL_INTERVAL = 4 # ticks between removing orthogonal obstacles
 
 # Snake Constants
 SNAKE_USE_FLOAT_MOVEMENT = False # Set to True for smooth snake movement
@@ -43,7 +47,8 @@ OBSTACLE_SIZE = (GRID_SIZE, GRID_SIZE)
 
 # Moving Obstacle Constants
 MOVING_OBSTACLE_USE_FLOAT_COLLISION = True # Set to True for smooth snake/moving_obstacle collision
-MOVING_OBSTACLE_COLOR = (120, 100, 140)  # Orange
+MOVING_OBSTACLE_COLOR_DIAGONAL = (150, 110, 200)  # Brighter purple for diagonal obstacles
+MOVING_OBSTACLE_COLOR_ORTHOGONAL = (220, 120, 60)  # Orange-amber for orthogonal obstacles
 MOVING_OBSTACLE_SIZE = (GRID_SIZE, GRID_SIZE)
 MOVING_OBSTACLE_SPEED = 0.1  # Grid cells per frame
 

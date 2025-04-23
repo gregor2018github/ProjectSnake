@@ -140,7 +140,7 @@ class Obstacle(GameObject):
 class MovingObstacle(GameObject):
     """ Represents a moving obstacle """
     def __init__(self, x, y):
-        super().__init__(x, y, C.MOVING_OBSTACLE_SIZE[0], C.MOVING_OBSTACLE_SIZE[1], C.MOVING_OBSTACLE_COLOR)
+        super().__init__(x, y, C.MOVING_OBSTACLE_SIZE[0], C.MOVING_OBSTACLE_SIZE[1], C.MOVING_OBSTACLE_COLOR_DIAGONAL)
         # Randomly assign an initial direction
         self.dx = random.choice([-1, 1]) * C.MOVING_OBSTACLE_SPEED
         self.dy = random.choice([-1, 1]) * C.MOVING_OBSTACLE_SPEED
@@ -255,7 +255,9 @@ class MovingObstacle(GameObject):
 class OrthogonalMovingObstacle(MovingObstacle):
     """Represents an orthogonally moving obstacle"""
     def __init__(self, x, y):
+        # Initialize with base class but override color
         super().__init__(x, y)
+        self.color = C.MOVING_OBSTACLE_COLOR_ORTHOGONAL
         # override direction to be orthogonal
         orientation = random.choice(['horizontal', 'vertical'])
         speed = C.MOVING_OBSTACLE_SPEED
@@ -273,7 +275,7 @@ class Particle:
         self.x = x * C.GRID_SIZE + C.GRID_SIZE // 2  # Center of grid cell
         self.y = y * C.GRID_SIZE + C.GRID_SIZE // 2
         self.size = random.randint(C.PARTICLE_MIN_SIZE, C.PARTICLE_MAX_SIZE)
-        self.color = random.choice(C.PARTICLE_COLORS)
+        self.color = random.choice(C.PARTICLE_COLORS_APPLE)
         # Random direction
         angle = random.uniform(0, 2 * math.pi)
         speed = random.uniform(C.PARTICLE_MIN_SPEED, C.PARTICLE_MAX_SPEED)
@@ -305,10 +307,24 @@ class Particle:
 
 class ParticleEffect:
     """Manages a group of particles for an effect"""
-    def __init__(self, x, y):
+    def __init__(self, x, y, effect_type="apple"):
         self.particles = []
+        
+        # Choose color palette based on effect type
+        color_map = {
+            "apple": C.PARTICLE_COLORS_APPLE,
+            "obstacle_static": C.PARTICLE_COLORS_OBSTACLE_STATIC,
+            "obstacle_orthogonal": C.PARTICLE_COLORS_OBSTACLE_ORTHOGONAL,
+            "obstacle_diagonal": C.PARTICLE_COLORS_OBSTACLE_DIAGONAL
+        }
+        
+        # Get color palette or default to apple colors
+        colors = color_map.get(effect_type, C.PARTICLE_COLORS_APPLE)
+            
         for _ in range(C.PARTICLE_COUNT):
-            self.particles.append(Particle(x, y))
+            particle = Particle(x, y)
+            particle.color = random.choice(colors)
+            self.particles.append(particle)
         
     def update(self):
         """Update all particles and remove dead ones"""
