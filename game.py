@@ -8,7 +8,7 @@ from pygame import mixer # Import mixer
 # Use absolute imports
 import constants as C
 import high_scores as hs
-from game_objects import Snake, Apple, Obstacle, MovingObstacle
+from game_objects import Snake, Apple, Obstacle, MovingObstacle, ParticleEffect, OrthogonalMovingObstacle
 from screen import Screen
 
 class Game:
@@ -64,8 +64,8 @@ class Game:
 
     def _add_obstacle(self):
         """ Adds a new obstacle in a random, unoccupied grid location. """
-        # Don't add obstacles in level 2
-        if self.level == 2:
+        # Only add static obstacles in level 1
+        if self.level != 1:
             return
             
         while True:
@@ -96,10 +96,26 @@ class Game:
                 self.moving_obstacles.append(MovingObstacle(x, y))
                 break
 
+    def _add_orthogonal_moving_obstacle(self):
+        """ Adds a new orthogonal moving obstacle for level 2. """
+        while True:
+            x = random.randint(0, C.GRID_WIDTH - 1)
+            y = random.randint(0, C.GRID_HEIGHT - 1)
+            new_pos = (x, y)
+            occupied = self._get_occupied_positions()
+            occupied.append((self.apple.x, self.apple.y))
+            if new_pos not in occupied:
+                self.moving_obstacles.append(OrthogonalMovingObstacle(x, y))
+                break
+
     def _check_level_update(self):
         """Checks if the player should advance to the next level"""
         if self.level == 1 and self.score >= C.LEVEL_2_SCORE:
             self.level = 2
+        elif self.level == 2 and self.score >= C.LEVEL_3_SCORE:
+            self.level = 3
+        elif self.level == 3 and self.score >= C.LEVEL_4_SCORE:
+            self.level = 4
             
     def _update_level_mechanics(self):
         """Updates level-specific mechanics"""
@@ -107,6 +123,12 @@ class Game:
             # In level 2, remove an obstacle every OBSTACLE_REMOVAL_INTERVAL frames
             if len(self.obstacles) > 0 and self.frame_counter % C.OBSTACLE_REMOVAL_INTERVAL == 0:
                 self.obstacles.pop(0)  # Remove the first obstacle
+                if self.remove_obstacle_sound:
+                    self.remove_obstacle_sound.play()
+        elif self.level == 3:
+            # In level 3, remove all orthogonal moving obstacles every OBSTACLE_REMOVAL_INTERVAL frames
+            if len(self.moving_obstacles) > 0 and self.frame_counter % C.OBSTACLE_REMOVAL_INTERVAL == 0:
+                self.moving_obstacles = [mo for mo in self.moving_obstacles if not isinstance(mo, OrthogonalMovingObstacle)]
                 if self.remove_obstacle_sound:
                     self.remove_obstacle_sound.play()
                 
@@ -146,6 +168,9 @@ class Game:
         
         # Apply level-specific mechanics
         self._update_level_mechanics()
+        
+        # Update particle effects and remove finished ones
+        self.particle_effects = [effect for effect in self.particle_effects if effect.update()]
 
     def check_collisions(self):
         """ Checks for collisions between game objects. """
@@ -156,11 +181,16 @@ class Game:
             if self.apple_eat_sound: 
                 self.apple_eat_sound.play()
                 
+            # Create particle effect at apple position
+            self.particle_effects.append(ParticleEffect(self.apple.x, self.apple.y))
+                
             # Level-specific behaviors when apple is eaten
             if self.level == 1:
-                self._add_obstacle() # Add obstacle when apple is eaten in level 1
-            else:
-                self._add_moving_obstacle() # Add moving obstacle when apple is eaten in level 2
+                self._add_obstacle()
+            elif self.level == 2:
+                self._add_orthogonal_moving_obstacle()
+            elif self.level == 3:
+                self._add_moving_obstacle()
                 
             # Respawn apple, ensuring it's not on the snake or obstacles
             self.apple.respawn(self._get_occupied_positions())
@@ -181,12 +211,16 @@ class Game:
     def draw(self):
         """ Draws all game elements onto the screen. """
         self.screen.clear()
+        # Draw particle effects
+        for effect in self.particle_effects:
+            effect.draw(self.screen.surface)
         self.screen.draw_element(self.snake)
         self.screen.draw_element(self.apple)
         for obstacle in self.obstacles:
             self.screen.draw_element(obstacle)
         for moving_obstacle in self.moving_obstacles:
             self.screen.draw_element(moving_obstacle)
+            
         self.screen.draw_score(self.score)
         self.screen.draw_level(self.level)
         self.screen.update()
@@ -298,6 +332,7 @@ class Game:
         self.snake = Snake()
         self.obstacles = [] # Start with no obstacles
         self.moving_obstacles = [] # Start with no moving obstacles
+        self.particle_effects = [] # Initialize empty list for particle effects
         self.apple = self._create_initial_apple()
         self.score = 0
         self.level = 1

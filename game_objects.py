@@ -1,6 +1,7 @@
 import pygame
 import random
 import constants as C # Use absolute import
+import math  # For particle effects calculations
 
 class GameObject:
     """ Base class for objects with position and size """
@@ -250,3 +251,71 @@ class MovingObstacle(GameObject):
         obstacle_rect = pygame.Rect(obstacle_screen_x, obstacle_screen_y, self.width, self.height)
 
         return obstacle_rect.colliderect(head_rect)
+
+class OrthogonalMovingObstacle(MovingObstacle):
+    """Represents an orthogonally moving obstacle"""
+    def __init__(self, x, y):
+        super().__init__(x, y)
+        # override direction to be orthogonal
+        orientation = random.choice(['horizontal', 'vertical'])
+        speed = C.MOVING_OBSTACLE_SPEED
+        if orientation == 'horizontal':
+            self.dx = random.choice([-1, 1]) * speed
+            self.dy = 0
+        else:
+            self.dy = random.choice([-1, 1]) * speed
+            self.dx = 0
+
+class Particle:
+    """Represents a single particle in a particle effect"""
+    def __init__(self, x, y):
+        # Convert grid coordinates to screen coordinates for particles
+        self.x = x * C.GRID_SIZE + C.GRID_SIZE // 2  # Center of grid cell
+        self.y = y * C.GRID_SIZE + C.GRID_SIZE // 2
+        self.size = random.randint(C.PARTICLE_MIN_SIZE, C.PARTICLE_MAX_SIZE)
+        self.color = random.choice(C.PARTICLE_COLORS)
+        # Random direction
+        angle = random.uniform(0, 2 * math.pi)
+        speed = random.uniform(C.PARTICLE_MIN_SPEED, C.PARTICLE_MAX_SPEED)
+        self.dx = math.cos(angle) * speed
+        self.dy = math.sin(angle) * speed
+        self.lifespan = C.PARTICLE_LIFESPAN
+        self.alpha = 255  # Transparency (255 = fully opaque)
+        
+    def update(self):
+        """Update particle position and lifespan"""
+        self.x += self.dx
+        self.y += self.dy
+        self.lifespan -= 1
+        # Gradually reduce alpha/transparency as particle ages
+        self.alpha = int(255 * (self.lifespan / C.PARTICLE_LIFESPAN))
+        return self.lifespan > 0
+        
+    def draw(self, surface):
+        """Draw particle with appropriate transparency"""
+        if self.lifespan <= 0:
+            return
+            
+        # Create temporary surface with per-pixel alpha
+        particle_surf = pygame.Surface((self.size, self.size), pygame.SRCALPHA)
+        # Apply transparency to the color
+        color_with_alpha = (*self.color, self.alpha)
+        pygame.draw.rect(particle_surf, color_with_alpha, (0, 0, self.size, self.size))
+        surface.blit(particle_surf, (int(self.x - self.size/2), int(self.y - self.size/2)))
+
+class ParticleEffect:
+    """Manages a group of particles for an effect"""
+    def __init__(self, x, y):
+        self.particles = []
+        for _ in range(C.PARTICLE_COUNT):
+            self.particles.append(Particle(x, y))
+        
+    def update(self):
+        """Update all particles and remove dead ones"""
+        self.particles = [particle for particle in self.particles if particle.update()]
+        return len(self.particles) > 0  # Effect is alive if any particles remain
+        
+    def draw(self, surface):
+        """Draw all particles in the effect"""
+        for particle in self.particles:
+            particle.draw(surface)

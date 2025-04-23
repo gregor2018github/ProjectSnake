@@ -9,9 +9,20 @@ GRID_SIZE = 20
 GRID_WIDTH = SCREEN_WIDTH // GRID_SIZE
 GRID_HEIGHT = SCREEN_HEIGHT // GRID_SIZE
 
+# Particle Effects Constants
+PARTICLE_COUNT = 15  # Number of particles per effect
+PARTICLE_MIN_SIZE = 1
+PARTICLE_MAX_SIZE = 5
+PARTICLE_MIN_SPEED = 0.4
+PARTICLE_MAX_SPEED = 0.95
+PARTICLE_LIFESPAN = 20  # Duration in ticks
+PARTICLE_COLORS = [(255, 0, 0), (255, 50, 0), (255, 20, 20)]  # Variations of red
+
 # Level System Constants
 LEVEL_2_SCORE = 5
-OBSTACLE_REMOVAL_INTERVAL = 4
+LEVEL_3_SCORE = 10
+LEVEL_4_SCORE = 15
+OBSTACLE_REMOVAL_INTERVAL = 4 # every x ticks one obstacle is removed
 
 # Snake Constants
 SNAKE_USE_FLOAT_MOVEMENT = False # Set to True for smooth snake movement
@@ -38,17 +49,19 @@ MOVING_OBSTACLE_SPEED = 0.1  # Grid cells per frame
 
 # Sound Constants
 SOUND_FOLDER = os.path.join("Files", "Sound")
-try:
-    APPLE_EAT_SOUND_FILE = os.path.join(SOUND_FOLDER, "apple-eat.wav")
-    BITE_SELF_SOUND_FILE = os.path.join(SOUND_FOLDER, "bite-self.wav")
-    BITE_OBSTACLE_SOUND_FILE = os.path.join(SOUND_FOLDER, "bite-obstacle.wav")
-    REMOVE_OBSTACLE_SOUND_FILE = os.path.join(SOUND_FOLDER, "remove-obstacle.wav")
-except FileNotFoundError:
-    print("Sound files not found. Ensure the 'Files/Sound' directory exists and contains the required sound files.")
-    APPLE_EAT_SOUND_FILE = None
-    BITE_SELF_SOUND_FILE = None
-    BITE_OBSTACLE_SOUND_FILE = None
-    REMOVE_OBSTACLE_SOUND_FILE = None
+
+def get_sound_file_path(folder, filename):
+    """Helper function to safely get sound file path."""
+    file_path = os.path.join(folder, filename)
+    if not os.path.exists(file_path):
+        print(f"Warning: Sound file not found: {file_path}")
+        return None
+    return file_path
+
+APPLE_EAT_SOUND_FILE = get_sound_file_path(SOUND_FOLDER, "apple-eat.wav")
+BITE_SELF_SOUND_FILE = get_sound_file_path(SOUND_FOLDER, "bite-self.wav")
+BITE_OBSTACLE_SOUND_FILE = get_sound_file_path(SOUND_FOLDER, "bite-obstacle.wav")
+REMOVE_OBSTACLE_SOUND_FILE = get_sound_file_path(SOUND_FOLDER, "remove-obstacle.wav")
 
 # UI and Display Constants
 BACKGROUND_COLOR = (0, 0, 0)
