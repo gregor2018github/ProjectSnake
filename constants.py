@@ -22,9 +22,9 @@ PARTICLE_COLORS_OBSTACLE_ORTHOGONAL = [(220, 120, 60), (240, 140, 80), (200, 100
 PARTICLE_COLORS_OBSTACLE_DIAGONAL = [(150, 110, 200), (170, 130, 220), (130, 90, 180)]  # Purple variations
 
 # Level System Constants
-LEVEL_2_SCORE = 5
-LEVEL_3_SCORE = 10
-LEVEL_4_SCORE = 15
+LEVEL_2_SCORE = 25
+LEVEL_3_SCORE = 45
+LEVEL_4_SCORE = 65
 OBSTACLE_REMOVAL_INTERVAL = 4 # every x ticks one obstacle is removed
 MOVING_OBSTACLE_REMOVAL_INTERVAL = 4 # ticks between removing orthogonal obstacles
 
