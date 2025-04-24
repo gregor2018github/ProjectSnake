@@ -25,6 +25,7 @@ class Game:
         self.bite_self_sound = None
         self.bite_obstacle_sound = None
         self.remove_obstacle_sound = None
+        self.next_direction = None # Buffer for the next direction change
 
         # Load sound effects individually
         try:
@@ -183,24 +184,38 @@ class Game:
             if event.type == QUIT:
                 self.running = False
             elif event.type == KEYDOWN:
+                new_dir = None
                 if event.key == K_UP or event.key == K_w:
-                    self.snake.change_direction((0, -1))
+                    new_dir = (0, -1)
                 elif event.key == K_DOWN or event.key == K_s:
-                    self.snake.change_direction((0, 1))
+                    new_dir = (0, 1)
                 elif event.key == K_LEFT or event.key == K_a:
-                    self.snake.change_direction((-1, 0))
+                    new_dir = (-1, 0)
                 elif event.key == K_RIGHT or event.key == K_d:
-                    self.snake.change_direction((1, 0))
+                    new_dir = (1, 0)
                 elif event.key == K_ESCAPE:
                     self.running = False # Allow quitting during gameplay
 
+                if new_dir:
+                    # Store the intended direction instead of changing immediately
+                    self.next_direction = new_dir
+
     def update_game_state(self):
         """ Updates the position of the snake. """
+        # Apply the buffered direction change before moving
+        if self.next_direction:
+            self.snake.change_direction(self.next_direction)
+            self.next_direction = None # Clear the buffer
+
         if not self.snake.move(): # move() returns False on collision (self or wall if enabled)
-            if self.bite_self_sound: 
-                self.bite_self_sound.play()
+            # Check if the collision was with self
+            head = self.snake.get_head_position()
+            if head in self.snake.positions[1:]: # Check against body segments
+                if self.bite_self_sound:
+                    self.bite_self_sound.play()
             self.game_over()
-            
+            return # Stop further updates if game over occurred
+
         # Check if player advances to next level
         self._check_level_update()
         
@@ -376,6 +391,7 @@ class Game:
         self.level = 1
         self.frame_counter = 0
         self.game_speed = C.SNAKE_SPEED_INITIAL
+        self.next_direction = None # Reset direction buffer
         # Flag to track if we need to remove orthogonal obstacles gradually
         self.removing_orthogonal_obstacles = False
         self.orthogonal_removal_counter = 0

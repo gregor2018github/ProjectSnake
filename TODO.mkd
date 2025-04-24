@@ -1,7 +1,6 @@
 # ProjectSnake - TODO List
 
 ## Current Tasks
-- [ ] Fix bug that snake can bite itself
 - [ ] stop the game before it goes to the highscores so player can see where it went wrong
 
 ## Backlog
@@ -12,12 +11,13 @@
 - [x] Initial project setup
 - [x] Change Apple Removal Particles into something circular around the epicentrum instead of dusk inside the epicentrum
 - [x] Obstacles must spawn with a minimum distance from the snake head
+- [x] Fix bug that snake can bite itself with quick direction changes (e.g., down-left-up)
 
 ## Notes & Ideas
 - Local Multiplayer (WASD vs Arrowkeys)
 
 ## Bugs
-- Quick "Left-Up" leads to snake biting itself, but snake should not be allowed to turn that fast
+- Quick "Left-Up" leads to snake biting itself, but snake should not be allowed to turn that fast -> **Fixed**
 
 ---
 *Last updated: 24-04-2025*
