@@ -305,10 +305,61 @@ class Particle:
         pygame.draw.rect(particle_surf, color_with_alpha, (0, 0, self.size, self.size))
         surface.blit(particle_surf, (int(self.x - self.size/2), int(self.y - self.size/2)))
 
-class ParticleEffect:
-    """Manages a group of particles for an effect"""
+class CirclePulse:
+    """Represents a single expanding circle in a pulse effect"""
+    def __init__(self, x, y, color, delay=0):
+        # Convert grid coordinates to screen coordinates for the circle center
+        self.x = x * C.GRID_SIZE + C.GRID_SIZE // 2
+        self.y = y * C.GRID_SIZE + C.GRID_SIZE // 2
+        self.radius = C.PULSE_MIN_RADIUS
+        self.color = color
+        self.lifespan = C.PULSE_LIFESPAN
+        self.delay = delay  # Delay before starting to pulse
+        self.alpha = 255  # Start fully opaque
+        
+    def update(self):
+        """Update pulse radius and transparency"""
+        if self.delay > 0:
+            self.delay -= 1
+            return True
+            
+        self.radius += C.PULSE_GROWTH_RATE
+        self.lifespan -= 1
+        
+        # Calculate alpha based on remaining lifespan
+        self.alpha = int(255 * (self.lifespan / C.PULSE_LIFESPAN))
+        
+        return self.lifespan > 0
+    
+    def draw(self, surface):
+        """Draw the pulse circle with appropriate transparency"""
+        if self.delay > 0 or self.lifespan <= 0:
+            return
+            
+        # Create a temporary surface with per-pixel alpha
+        size = int(self.radius * 2 + C.PULSE_LINE_WIDTH * 2)
+        circle_surf = pygame.Surface((size, size), pygame.SRCALPHA)
+        
+        # Draw circle on the temporary surface with alpha
+        color_with_alpha = (*self.color, self.alpha)
+        pygame.draw.circle(
+            circle_surf, 
+            color_with_alpha, 
+            (size // 2, size // 2), 
+            self.radius, 
+            C.PULSE_LINE_WIDTH
+        )
+        
+        # Blit the circle to the main surface
+        surface.blit(
+            circle_surf, 
+            (int(self.x - size // 2), int(self.y - size // 2))
+        )
+
+class CirclePulseEffect:
+    """Creates an expanding circular pulse effect from the epicentrum"""
     def __init__(self, x, y, effect_type="apple"):
-        self.particles = []
+        self.pulses = []
         
         # Choose color palette based on effect type
         color_map = {
@@ -320,18 +371,71 @@ class ParticleEffect:
         
         # Get color palette or default to apple colors
         colors = color_map.get(effect_type, C.PARTICLE_COLORS_APPLE)
-            
-        for _ in range(C.PARTICLE_COUNT):
-            particle = Particle(x, y)
-            particle.color = random.choice(colors)
-            self.particles.append(particle)
+        
+        # Create multiple pulses with different delays
+        for i in range(C.PULSE_COUNT):
+            pulse = CirclePulse(
+                x, y, 
+                random.choice(colors), 
+                delay=i * 3  # Staggered delay for wave effect
+            )
+            self.pulses.append(pulse)
+    
+    def update(self):
+        """Update all pulses and remove expired ones"""
+        self.pulses = [pulse for pulse in self.pulses if pulse.update()]
+        return len(self.pulses) > 0  # Effect is alive if any pulses remain
+        
+    def draw(self, surface):
+        """Draw all pulses in the effect"""
+        for pulse in self.pulses:
+            pulse.draw(surface)
+
+class ParticleEffect:
+    """Manages a group of particles for an effect"""
+    def __init__(self, x, y, effect_type="apple", is_spawning=False):
+        self.particles = []
+        self.pulses = None
+        self.effect_type = effect_type
+        
+        # Choose color palette based on effect type
+        color_map = {
+            "apple": C.PARTICLE_COLORS_APPLE,
+            "obstacle_static": C.PARTICLE_COLORS_OBSTACLE_STATIC,
+            "obstacle_orthogonal": C.PARTICLE_COLORS_OBSTACLE_ORTHOGONAL,
+            "obstacle_diagonal": C.PARTICLE_COLORS_OBSTACLE_DIAGONAL
+        }
+        
+        # Get color palette or default to apple colors
+        colors = color_map.get(effect_type, C.PARTICLE_COLORS_APPLE)
+        
+        # Create appropriate effect based on whether object is spawning or despawning
+        if is_spawning:
+            # Circular pulse for spawning objects
+            self.pulses = CirclePulseEffect(x, y, effect_type)
+        else:
+            # Dust particles for despawning objects
+            for _ in range(C.PARTICLE_COUNT):
+                particle = Particle(x, y)
+                particle.color = random.choice(colors)
+                self.particles.append(particle)
         
     def update(self):
         """Update all particles and remove dead ones"""
+        # Update and check pulse effect
+        if self.pulses and not self.pulses.update():
+            self.pulses = None
+        
+        # Update and check particles
         self.particles = [particle for particle in self.particles if particle.update()]
-        return len(self.particles) > 0  # Effect is alive if any particles remain
+        
+        # Return True if any effect is still active
+        return self.pulses is not None or len(self.particles) > 0
         
     def draw(self, surface):
-        """Draw all particles in the effect"""
+        """Draw all effects"""
+        if self.pulses:
+            self.pulses.draw(surface)
+            
         for particle in self.particles:
             particle.draw(surface)

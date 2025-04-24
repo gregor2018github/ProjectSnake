@@ -21,8 +21,16 @@ PARTICLE_COLORS_OBSTACLE_STATIC = [(130, 130, 130), (160, 160, 160), (100, 100, 
 PARTICLE_COLORS_OBSTACLE_ORTHOGONAL = [(220, 120, 60), (240, 140, 80), (200, 100, 40)]  # Orange variations
 PARTICLE_COLORS_OBSTACLE_DIAGONAL = [(150, 110, 200), (170, 130, 220), (130, 90, 180)]  # Purple variations
 
+# Circular Pulse Effect Constants
+PULSE_MIN_RADIUS = 3
+PULSE_MAX_RADIUS = 30
+PULSE_GROWTH_RATE = 1.5  # How fast the pulse grows per frame
+PULSE_LINE_WIDTH = 2  # Width of the pulse circle line
+PULSE_LIFESPAN = 15  # How many frames the pulse lasts
+PULSE_COUNT = 3  # Number of pulse circles per effect
+
 # Level System Constants
-LEVEL_2_SCORE = 25
+LEVEL_2_SCORE = 5
 LEVEL_3_SCORE = 45
 LEVEL_4_SCORE = 65
 OBSTACLE_REMOVAL_INTERVAL = 4 # every x ticks one obstacle is removed

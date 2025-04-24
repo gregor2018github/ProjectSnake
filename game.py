@@ -78,7 +78,10 @@ class Game:
             occupied.append((self.apple.x, self.apple.y)) # Include apple position
 
             if new_obstacle_pos not in occupied:
-                self.obstacles.append(Obstacle(x, y))
+                obstacle = Obstacle(x, y)
+                self.obstacles.append(obstacle)
+                # Create spawn effect for the new obstacle
+                self.particle_effects.append(ParticleEffect(x, y, "obstacle_static", is_spawning=True))
                 break
 
     def _add_moving_obstacle(self):
@@ -93,7 +96,10 @@ class Game:
             occupied.append((self.apple.x, self.apple.y)) # Include apple position
 
             if new_obstacle_pos not in occupied:
-                self.moving_obstacles.append(MovingObstacle(x, y))
+                obstacle = MovingObstacle(x, y)
+                self.moving_obstacles.append(obstacle)
+                # Create spawn effect for the new obstacle
+                self.particle_effects.append(ParticleEffect(x, y, "obstacle_diagonal", is_spawning=True))
                 break
 
     def _add_orthogonal_moving_obstacle(self):
@@ -105,7 +111,10 @@ class Game:
             occupied = self._get_occupied_positions()
             occupied.append((self.apple.x, self.apple.y))
             if new_pos not in occupied:
-                self.moving_obstacles.append(OrthogonalMovingObstacle(x, y))
+                obstacle = OrthogonalMovingObstacle(x, y)
+                self.moving_obstacles.append(obstacle)
+                # Create spawn effect for the new obstacle
+                self.particle_effects.append(ParticleEffect(x, y, "obstacle_orthogonal", is_spawning=True))
                 break
 
     def _check_level_update(self):
@@ -128,15 +137,15 @@ class Game:
     def _update_level_mechanics(self):
         """Updates level-specific mechanics"""
         if self.level == 2:
-            # In level 2, remove static obstacles with gray dust
+            # In level 2, remove static obstacles with dust particles
             if len(self.obstacles) > 0 and self.frame_counter % C.OBSTACLE_REMOVAL_INTERVAL == 0:
                 obstacle_to_remove = self.obstacles.pop(0)  # Remove the first obstacle
                 if self.remove_obstacle_sound:
                     self.remove_obstacle_sound.play()
-                # Create gray dust particles for static obstacles
-                self.particle_effects.append(ParticleEffect(obstacle_to_remove.x, obstacle_to_remove.y, "obstacle_static"))
+                # Create dust particles for obstacle removal (is_spawning=False)
+                self.particle_effects.append(ParticleEffect(obstacle_to_remove.x, obstacle_to_remove.y, "obstacle_static", is_spawning=False))
         
-        # Handle orthogonal obstacle removal with orange dust
+        # Handle orthogonal obstacle removal with dust particles
         if self.removing_orthogonal_obstacles and self.frame_counter % C.MOVING_OBSTACLE_REMOVAL_INTERVAL == 0:
             orthogonal_obstacles = [obstacle for obstacle in self.moving_obstacles 
                                     if isinstance(obstacle, OrthogonalMovingObstacle)]
@@ -147,12 +156,12 @@ class Game:
                 # Play removal sound
                 if self.remove_obstacle_sound:
                     self.remove_obstacle_sound.play()
-                # Create orange dust particles
-                self.particle_effects.append(ParticleEffect(obstacle_to_remove.x, obstacle_to_remove.y, "obstacle_orthogonal"))
+                # Create dust particles for removal
+                self.particle_effects.append(ParticleEffect(obstacle_to_remove.x, obstacle_to_remove.y, "obstacle_orthogonal", is_spawning=False))
             else:
                 self.removing_orthogonal_obstacles = False
         
-        # Handle diagonal obstacle removal with purple dust
+        # Handle diagonal obstacle removal with dust particles
         if hasattr(self, 'removing_diagonal_obstacles') and self.removing_diagonal_obstacles and self.frame_counter % C.MOVING_OBSTACLE_REMOVAL_INTERVAL == 0:
             diagonal_obstacles = [obstacle for obstacle in self.moving_obstacles 
                                 if isinstance(obstacle, MovingObstacle) and not isinstance(obstacle, OrthogonalMovingObstacle)]
@@ -163,8 +172,8 @@ class Game:
                 # Play removal sound
                 if self.remove_obstacle_sound:
                     self.remove_obstacle_sound.play()
-                # Create purple dust particles
-                self.particle_effects.append(ParticleEffect(obstacle_to_remove.x, obstacle_to_remove.y, "obstacle_diagonal"))
+                # Create dust particles for removal
+                self.particle_effects.append(ParticleEffect(obstacle_to_remove.x, obstacle_to_remove.y, "obstacle_diagonal", is_spawning=False))
             else:
                 self.removing_diagonal_obstacles = False
                 
@@ -217,8 +226,8 @@ class Game:
             if self.apple_eat_sound: 
                 self.apple_eat_sound.play()
                 
-            # Create particle effect at apple position
-            self.particle_effects.append(ParticleEffect(self.apple.x, self.apple.y))
+            # Create dust particles at apple position when eaten (despawned)
+            #self.particle_effects.append(ParticleEffect(self.apple.x, self.apple.y, is_spawning=False))
                 
             # Level-specific behaviors when apple is eaten
             if self.level == 1:
@@ -228,8 +237,14 @@ class Game:
             elif self.level == 3:
                 self._add_moving_obstacle()
                 
+            # Store old apple position to create dust effect
+            old_x, old_y = self.apple.x, self.apple.y
+                
             # Respawn apple, ensuring it's not on the snake or obstacles
             self.apple.respawn(self._get_occupied_positions())
+            
+            # Create circular pulse effect at new apple position (spawned)
+            #self.particle_effects.append(ParticleEffect(self.apple.x, self.apple.y, "apple", is_spawning=True))
 
         # Snake hitting obstacles
         if self.snake.collides_with_obstacles(self.obstacles):
