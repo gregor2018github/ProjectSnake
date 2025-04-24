@@ -62,59 +62,52 @@ class Game:
         apple.respawn(self._get_occupied_positions())
         return apple
 
-    def _add_obstacle(self):
-        """ Adds a new obstacle in a random, unoccupied grid location. """
-        # Only add static obstacles in level 1
-        if self.level != 1:
+    def _add_obstacle(self, obstacle_type="static"):
+        """
+        Adds a new obstacle of the specified type in a random, unoccupied grid location.
+        
+        Args:
+            obstacle_type: String indicating the type of obstacle to create.
+                "static" - Static obstacle for level 1
+                "orthogonal" - Orthogonally moving obstacle for level 2
+                "diagonal" - Diagonally moving obstacle for level 3
+        """
+        # Map obstacle types to their classes and effect types
+        obstacle_map = {
+            "static": {"class": Obstacle, "effect_type": "obstacle_static", "list": self.obstacles},
+            "orthogonal": {"class": OrthogonalMovingObstacle, "effect_type": "obstacle_orthogonal", "list": self.moving_obstacles},
+            "diagonal": {"class": MovingObstacle, "effect_type": "obstacle_diagonal", "list": self.moving_obstacles}
+        }
+        
+        # Get the corresponding settings for this obstacle type
+        obstacle_settings = obstacle_map.get(obstacle_type)
+        if not obstacle_settings:
+            print(f"Warning: Unknown obstacle type '{obstacle_type}'")
             return
-            
-        while True:
-            x = random.randint(0, C.GRID_WIDTH - 1)
-            y = random.randint(0, C.GRID_HEIGHT - 1)
-            new_obstacle_pos = (x, y)
-
-            # Check against snake, existing obstacles, and the apple
-            occupied = self._get_occupied_positions()
-            occupied.append((self.apple.x, self.apple.y)) # Include apple position
-
-            if new_obstacle_pos not in occupied:
-                obstacle = Obstacle(x, y)
-                self.obstacles.append(obstacle)
-                # Create spawn effect for the new obstacle
-                self.particle_effects.append(ParticleEffect(x, y, "obstacle_static", is_spawning=True))
-                break
-
-    def _add_moving_obstacle(self):
-        """ Adds a new moving obstacle in a random, unoccupied grid location. """
-        while True:
-            x = random.randint(0, C.GRID_WIDTH - 1)
-            y = random.randint(0, C.GRID_HEIGHT - 1)
-            new_obstacle_pos = (x, y)
-
-            # Check against snake, existing obstacles, and the apple
-            occupied = self._get_occupied_positions()
-            occupied.append((self.apple.x, self.apple.y)) # Include apple position
-
-            if new_obstacle_pos not in occupied:
-                obstacle = MovingObstacle(x, y)
-                self.moving_obstacles.append(obstacle)
-                # Create spawn effect for the new obstacle
-                self.particle_effects.append(ParticleEffect(x, y, "obstacle_diagonal", is_spawning=True))
-                break
-
-    def _add_orthogonal_moving_obstacle(self):
-        """ Adds a new orthogonal moving obstacle for level 2. """
+        
+        # Find a suitable location
         while True:
             x = random.randint(0, C.GRID_WIDTH - 1)
             y = random.randint(0, C.GRID_HEIGHT - 1)
             new_pos = (x, y)
+            
+            # Check against snake, existing obstacles, and the apple
             occupied = self._get_occupied_positions()
             occupied.append((self.apple.x, self.apple.y))
-            if new_pos not in occupied:
-                obstacle = OrthogonalMovingObstacle(x, y)
-                self.moving_obstacles.append(obstacle)
-                # Create spawn effect for the new obstacle
-                self.particle_effects.append(ParticleEffect(x, y, "obstacle_orthogonal", is_spawning=True))
+            
+            # Get snake head position for distance check
+            head_x, head_y = self.snake.get_head_position()
+            
+            # Calculate Manhattan distance from snake head
+            distance_from_head = abs(x - head_x) + abs(y - head_y)
+            
+            if new_pos not in occupied and distance_from_head >= C.MIN_OBSTACLE_SPAWN_DISTANCE:
+                # Create the obstacle
+                obstacle = obstacle_settings["class"](x, y)
+                # Add to the appropriate list
+                obstacle_settings["list"].append(obstacle)
+                # Create spawn effect
+                self.particle_effects.append(ParticleEffect(x, y, obstacle_settings["effect_type"], is_spawning=True))
                 break
 
     def _check_level_update(self):
@@ -226,16 +219,13 @@ class Game:
             if self.apple_eat_sound: 
                 self.apple_eat_sound.play()
                 
-            # Create dust particles at apple position when eaten (despawned)
-            #self.particle_effects.append(ParticleEffect(self.apple.x, self.apple.y, is_spawning=False))
-                
             # Level-specific behaviors when apple is eaten
             if self.level == 1:
-                self._add_obstacle()
+                self._add_obstacle("static")
             elif self.level == 2:
-                self._add_orthogonal_moving_obstacle()
+                self._add_obstacle("orthogonal")
             elif self.level == 3:
-                self._add_moving_obstacle()
+                self._add_obstacle("diagonal")
                 
             # Store old apple position to create dust effect
             old_x, old_y = self.apple.x, self.apple.y
@@ -243,9 +233,6 @@ class Game:
             # Respawn apple, ensuring it's not on the snake or obstacles
             self.apple.respawn(self._get_occupied_positions())
             
-            # Create circular pulse effect at new apple position (spawned)
-            #self.particle_effects.append(ParticleEffect(self.apple.x, self.apple.y, "apple", is_spawning=True))
-
         # Snake hitting obstacles
         if self.snake.collides_with_obstacles(self.obstacles):
             if self.bite_obstacle_sound: 

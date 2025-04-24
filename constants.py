@@ -52,6 +52,7 @@ APPLE_SIZE = (GRID_SIZE, GRID_SIZE)
 # Obstacle Constants
 OBSTACLE_COLOR = (100, 100, 100)  # Gray
 OBSTACLE_SIZE = (GRID_SIZE, GRID_SIZE)
+MIN_OBSTACLE_SPAWN_DISTANCE = 5  # Minimum distance from the snake head to spawn obstacles
 
 # Moving Obstacle Constants
 MOVING_OBSTACLE_USE_FLOAT_COLLISION = True # Set to True for smooth snake/moving_obstacle collision

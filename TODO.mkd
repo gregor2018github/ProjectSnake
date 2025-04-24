@@ -1,8 +1,8 @@
 # ProjectSnake - TODO List
 
 ## Current Tasks
-- [ ] Obstacles must spawn with a minimum distance from the snake head
 - [ ] Fix bug that snake can bite itself
+- [ ] stop the game before it goes to the highscores so player can see where it went wrong
 
 ## Backlog
 - [ ] Collect more statistics during playthrough
@@ -11,6 +11,7 @@
 ## Completed Tasks
 - [x] Initial project setup
 - [x] Change Apple Removal Particles into something circular around the epicentrum instead of dusk inside the epicentrum
+- [x] Obstacles must spawn with a minimum distance from the snake head
 
 ## Notes & Ideas
 - Local Multiplayer (WASD vs Arrowkeys)
