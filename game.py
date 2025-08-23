@@ -4,6 +4,7 @@ import random
 import os # Import os for path joining
 from pygame.locals import *
 from pygame import mixer # Import mixer
+from time import sleep
 
 # Use absolute imports
 import constants as C
@@ -329,10 +330,30 @@ class Game:
                             player_name += event.unicode
 
         return player_name if player_name else "Anonymous" # Default name if empty
-
+    
+    def wait_for_enter(self):
+        """Game pauses and awaits 'Enter'. Other buttons cannot be pressed."""
+        self.running = False # Pause the game loop
+        # Print to the bottom of the screen "Press Enter to continue..."
+        self.screen.draw_bottom_message(message="Press ENTER to continue...", size=20)
+        self.screen.update()
+        waiting_for_input = True
+        while waiting_for_input:
+            self.clock.tick(15)  # Lower tick rate for game over screen
+            for event in pygame.event.get():
+                if event.type == QUIT:
+                    self.running = False
+                    waiting_for_input = False
+                elif event.type == KEYDOWN:
+                    if event.key == K_RETURN:
+                        waiting_for_input = False  # Exit waiting loop
+                        self.running = True  # Ensure game continues
 
     def game_over(self):
         """ Handles the game over sequence, including high score check and restart prompt. """
+        self.running = False # Stop the main game loop
+        self.wait_for_enter()
+        self.running = True # Allow the game to continue for restart or quit
         insert_pos = self.check_and_update_high_scores(self.score)
 
         player_name = None

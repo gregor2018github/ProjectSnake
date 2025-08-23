@@ -1,5 +1,5 @@
+Caro B,66
+Playtester,60
 Flip,54
 Caroline,53
-Fransje,51
-Fristi,47
-Tommy,45
+The Snake,53

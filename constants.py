@@ -30,7 +30,7 @@ PULSE_LIFESPAN = 15  # How many frames the pulse lasts
 PULSE_COUNT = 3  # Number of pulse circles per effect
 
 # Level System Constants
-LEVEL_2_SCORE = 5
+LEVEL_2_SCORE = 25
 LEVEL_3_SCORE = 45
 LEVEL_4_SCORE = 65
 OBSTACLE_REMOVAL_INTERVAL = 4 # every x ticks one obstacle is removed

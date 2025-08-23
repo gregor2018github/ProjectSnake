@@ -49,6 +49,13 @@ class Screen:
         text_rect = game_over_text.get_rect(center=(C.GAME_OVER_POS[0], C.GAME_OVER_POS[1] - 100)) # Raised position
         self.surface.blit(game_over_text, text_rect)
 
+    def draw_bottom_message(self: object, message: str, size: int) -> None:
+        """Draws a message at the bottom of the screen."""
+        font = pygame.font.SysFont('Arial', size)
+        bottom_text = font.render(message, True, C.TEXT_COLOR)
+        text_rect = bottom_text.get_rect(center=(C.SCREEN_WIDTH // 2, C.SCREEN_HEIGHT - 40))
+        self.surface.blit(bottom_text, text_rect)
+
     def draw_high_score_list(self, high_scores):
         """Draws only the high score list."""
         # High Scores title

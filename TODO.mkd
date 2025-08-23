@@ -15,6 +15,8 @@
 
 ## Notes & Ideas
 - Local Multiplayer (WASD vs Arrowkeys)
+- Special perks to pick up (e.g., speed boost, invincibility)
+- Health system for the snake (e.g., if it hits an obstacle, it loses health instead of dying)
 
 ## Bugs
 - Quick "Left-Up" leads to snake biting itself, but snake should not be allowed to turn that fast -> **Fixed**
