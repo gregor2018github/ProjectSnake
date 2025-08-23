@@ -49,6 +49,10 @@ SNAKE_HEAD_COLOR = (0, 255, 0)  # Brighter green
 APPLE_COLOR = (255, 0, 0)  # Red
 APPLE_SIZE = (GRID_SIZE, GRID_SIZE)
 
+MAGIC_APPLE_COLOR = (255, 215, 0)  # Gold
+MAGIC_APPLE_SIZE = (GRID_SIZE, GRID_SIZE)
+MAGIC_APPLE_TYPES = ["increase_tick_speed", "decrease_tick_speed"]
+
 # Obstacle Constants
 OBSTACLE_COLOR = (100, 100, 100)  # Gray
 OBSTACLE_SIZE = (GRID_SIZE, GRID_SIZE)
@@ -143,5 +147,23 @@ Death_Messages = [
     "This is why we can't have nice things.",
     "Remember, it's just a game... sort of.",
     "Do you really try or is that trolling?",
-    "That was not bad, but then you lost."
+    "That was not bad, but then you lost.",
+    "Listen... the sound of failure.",
+    "This sound... it's the sound of defeat.",
+    "Tragic...",
+    "I know, certainly not your fault.",
+    "Anyone home?",
+    "Hello? Is anyone even there?",
+    "Looks like it's just you and your thoughts now.",
+    "Man, this is awkward...",
+    "All you had to do was follow the damn train, CJ.",
+    "All other three directions seemed safer...",
+    "Well, that escalated quickly.",
+    "Surprise! You died.",
+    "Pack it up, you're done.",
+    "Wow, so fast back to the start.",
+    "Looks like you really know how to make an exit.",
+    "And just like that, it's game over.",
+    "If you don't put in the effort, you won't see results.",
+    "I don't know how to sugarcoat this..."
 ]

@@ -132,6 +132,12 @@ class Apple(GameObject):
                 self.update_rect() # Update rect based on new grid position
                 break # Found a free spot
 
+class MagicApple(GameObject):
+    """ Represents a magic apple """
+    def __init__(self, x, y):
+        super().__init__(x, y, C.MAGIC_APPLE_SIZE[0], C.MAGIC_APPLE_SIZE[1], C.MAGIC_APPLE_COLOR)
+        self.type = random.choice(C.MAGIC_APPLE_TYPES)
+
 class Obstacle(GameObject):
     """ Represents an obstacle """
     def __init__(self, x, y):
