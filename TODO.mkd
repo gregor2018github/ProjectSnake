@@ -1,13 +1,13 @@
 # ProjectSnake - TODO List
 
 ## Current Tasks
-- [ ] Implement game pause functionality
+- [ ] Show funny sentences that appear when player dies
 
 ## Backlog
-- [ ] Show funny sentences that appear when player dies
 - [ ] Add Random items that can spawn with a limited lifetime, when player eats them, random buffs and actions will take place
 - [ ] Collect more statistics during playthrough
 - [ ] Display more statistics in Highscore
+- [ ] Ask if player really wants to quit after pressing ESC
 
 ## Completed Tasks
 - [x] Initial project setup
@@ -15,6 +15,7 @@
 - [x] Obstacles must spawn with a minimum distance from the snake head
 - [x] Fix bug that snake can bite itself with quick direction changes (e.g., down-left-up)
 - [x] stop the game before it goes to the highscores so player can see where it went wrong
+- [x] Implement game pause functionality
 
 ## Notes & Ideas
 - Local Multiplayer (WASD vs Arrowkeys)

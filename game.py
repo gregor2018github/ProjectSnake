@@ -194,6 +194,8 @@ class Game:
                     new_dir = (-1, 0)
                 elif event.key == K_RIGHT or event.key == K_d:
                     new_dir = (1, 0)
+                elif event.key == K_SPACE:
+                    self.pause_game()
                 elif event.key == K_ESCAPE:
                     self.running = False # Allow quitting during gameplay
 
@@ -330,7 +332,11 @@ class Game:
                             player_name += event.unicode
 
         return player_name if player_name else "Anonymous" # Default name if empty
-    
+
+    def pause_game(self):
+        """Pauses the game and waits for player input to continue."""
+        self.wait_for_enter()
+
     def wait_for_enter(self):
         """Game pauses and awaits 'Enter'. Other buttons cannot be pressed."""
         self.running = False # Pause the game loop
