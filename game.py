@@ -7,7 +7,7 @@ from time import sleep
 # Use absolute imports
 import constants as C
 import high_scores as hs
-from game_objects import Snake, Apple, Obstacle, MovingObstacle, ParticleEffect, OrthogonalMovingObstacle
+from game_objects import Snake, Apple, MagicApple, Obstacle, MovingObstacle, ParticleEffect, OrthogonalMovingObstacle
 from screen import Screen
 
 class Game:
@@ -34,6 +34,11 @@ class Game:
             print(f"Warning: Could not load apple eat sound ({C.APPLE_EAT_SOUND_FILE}): {e}")
 
         try:
+            self.magic_apple_eat_sound = mixer.Sound(C.MAGIC_APPLE_EAT_SOUND_FILE)
+        except pygame.error as e:
+            print(f"Warning: Could not load magic apple eat sound ({C.MAGIC_APPLE_EAT_SOUND_FILE}): {e}")
+
+        try:
             self.bite_self_sound = mixer.Sound(C.BITE_SELF_SOUND_FILE)
         except pygame.error as e:
             print(f"Warning: Could not load bite self sound ({C.BITE_SELF_SOUND_FILE}): {e}")
@@ -58,10 +63,33 @@ class Game:
         return occupied
 
     def _create_initial_apple(self):
-        """ Creates the first apple, ensuring it doesn't spawn on snake/obstacles. """
+        """ Creates the first apple, ensuring it doesn't spawn on snake/obstacles. Subsequent apple spawning is defined in the Apple class."""
         apple = Apple(0, 0) # Initial dummy position
         apple.respawn(self._get_occupied_positions())
         return apple
+    
+    def _add_magic_apple(self):
+        """ Adds a magic apple to the game at a random unoccupied position. """
+        while True:
+            x = random.randint(0, C.GRID_WIDTH - 1)
+            y = random.randint(0, C.GRID_HEIGHT - 1)
+            new_pos = (x, y)
+            
+            # Check against snake, existing obstacles, and the regular apple
+            occupied = self._get_occupied_positions()
+            occupied.append((self.apple.x, self.apple.y))
+            
+            # Get snake head position for distance check
+            head_x, head_y = self.snake.get_head_position()
+            
+            # Calculate Manhattan distance from snake head
+            distance_from_head = abs(x - head_x) + abs(y - head_y)
+            
+            if new_pos not in occupied and distance_from_head >= C.MIN_OBSTACLE_SPAWN_DISTANCE:
+                # Create the magic apple
+                magic_apple = MagicApple(x, y)
+                self.magic_apples.append(magic_apple)
+                break
 
     def _add_obstacle(self, obstacle_type="static"):
         """
@@ -245,11 +273,25 @@ class Game:
                 self._add_obstacle("diagonal")
                 
             # Store old apple position to create dust effect
-            old_x, old_y = self.apple.x, self.apple.y
-                
+            # old_x, old_y = self.apple.x, self.apple.y
+
             # Respawn apple, ensuring it's not on the snake or obstacles
             self.apple.respawn(self._get_occupied_positions())
-            
+
+            # sometimes a magical apple spawns when a normal apple was eaten
+            if random.random() < C.MAGIC_APPLE_SPAWN_PROBABILITY:
+                self._add_magic_apple()
+
+        # Snake eating magic apple
+        for magic_apple in list(self.magic_apples):
+            if self.snake.collides_with_rect(magic_apple.rect):
+                self.score += 5
+                self.snake.grow()
+                if self.magic_apple_eat_sound:
+                    self.magic_apple_eat_sound.play()
+                self.magic_apples.remove(magic_apple)
+                break
+
         # Snake hitting obstacles
         if self.snake.collides_with_obstacles(self.obstacles):
             if self.bite_obstacle_sound: 
@@ -266,11 +308,12 @@ class Game:
     def draw(self):
         """ Draws all game elements onto the screen. """
         self.screen.clear()
-        # Draw particle effects
         for effect in self.particle_effects:
             effect.draw(self.screen.surface)
         self.screen.draw_element(self.snake)
         self.screen.draw_element(self.apple)
+        for magic_apple in self.magic_apples:
+            self.screen.draw_element(magic_apple)
         for obstacle in self.obstacles:
             self.screen.draw_element(obstacle)
         for moving_obstacle in self.moving_obstacles:
@@ -297,7 +340,6 @@ class Game:
              return -1 # Indicate no high score achieved or list is full
 
         return insert_pos # Return the index where the score should be inserted
-
 
     def get_player_name(self):
         """ Handles the text input screen for entering a high score name. """
@@ -334,13 +376,13 @@ class Game:
 
     def pause_game(self):
         """Pauses the game and waits for player input to continue."""
-        self.wait_for_enter()
+        self.wait_for_continue()
 
-    def wait_for_enter(self):
-        """Game pauses and awaits 'Enter'. Other buttons cannot be pressed."""
+    def wait_for_continue(self):
+        """Game pauses and awaits 'Space'. Other buttons cannot be pressed."""
         self.running = False # Pause the game loop
-        # Print to the bottom of the screen "Press Enter to continue..."
-        self.screen.draw_bottom_message(message="Press ENTER to continue...", size=20)
+        # Print to the bottom of the screen "Press Space to continue..."
+        self.screen.draw_bottom_message(message="Press SPACE to continue...", size=20)
         self.screen.update()
         waiting_for_input = True
         while waiting_for_input:
@@ -350,12 +392,12 @@ class Game:
                     self.running = False
                     waiting_for_input = False
                 elif event.type == KEYDOWN:
-                    if event.key == K_RETURN:
+                    if event.key == K_SPACE:
                         waiting_for_input = False  # Exit waiting loop
                         self.running = True  # Ensure game continues
     
-    def wait_for_enter_after_death(self):
-        """Game pauses and awaits 'Enter'. Other buttons cannot be pressed. In the meantime a random joke sentence will pass over the screen."""
+    def wait_for_continue_after_death(self):
+        """Game pauses and awaits 'Space'. Other buttons cannot be pressed. In the meantime a random joke sentence will pass over the screen."""
         # chose random joke from the death message list
         joke_text = random.choice(C.Death_Messages)
         text_height_start = random.randint(50, C.SCREEN_HEIGHT-100)
@@ -367,7 +409,7 @@ class Game:
         current_text_width = text_pixel_width / 1.5 + 20
 
         self.running = False # Pause the game loop
-        self.screen.draw_bottom_message(message="Press ENTER to continue...", size=20)
+        self.screen.draw_bottom_message(message="Press SPACE to continue...", size=20)
         self.screen.update()
         waiting_for_input = True
         static_background = self.screen.surface.copy() # save the current visuals to rerender it
@@ -392,15 +434,14 @@ class Game:
                     self.running = False
                     waiting_for_input = False
                 elif event.type == KEYDOWN:
-                    if event.key == K_RETURN:
+                    if event.key == K_SPACE:
                         waiting_for_input = False  # Exit waiting loop
                         self.running = True  # Ensure game continues
-
 
     def game_over(self):
         """ Handles the game over sequence, including high score check and restart prompt. """
         self.gameover = True
-        self.wait_for_enter_after_death()
+        self.wait_for_continue_after_death()
         self.running = True # Allow the game to continue for restart or quit
         insert_pos = self.check_and_update_high_scores(self.score)
 
@@ -448,12 +489,12 @@ class Game:
         if self.running:
             self.reset()
 
-
     def reset(self):
         """ Resets the game state for a new game. """
         self.snake = Snake()
         self.obstacles = [] # Start with no obstacles
         self.moving_obstacles = [] # Start with no moving obstacles
+        self.magic_apples = [] # Start with no magic apples
         self.particle_effects = [] # Initialize empty list for particle effects
         self.apple = self._create_initial_apple()
         self.score = 0
@@ -467,7 +508,6 @@ class Game:
         # self.running should already be True if reset is called from game_over
         # If called initially, set it here.
         self.running = True
-
 
     def run(self):
         """ Starts and runs the main game loop. """

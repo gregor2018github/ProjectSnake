@@ -137,6 +137,10 @@ class MagicApple(GameObject):
     def __init__(self, x, y):
         super().__init__(x, y, C.MAGIC_APPLE_SIZE[0], C.MAGIC_APPLE_SIZE[1], C.MAGIC_APPLE_COLOR)
         self.type = random.choice(C.MAGIC_APPLE_TYPES)
+        self.lifespan = 100  # Default lifespan until object despawns automatically
+
+    def update(self):
+        self.lifespan -= 1
 
 class Obstacle(GameObject):
     """ Represents an obstacle """

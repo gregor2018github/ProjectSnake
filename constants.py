@@ -52,6 +52,7 @@ APPLE_SIZE = (GRID_SIZE, GRID_SIZE)
 MAGIC_APPLE_COLOR = (255, 215, 0)  # Gold
 MAGIC_APPLE_SIZE = (GRID_SIZE, GRID_SIZE)
 MAGIC_APPLE_TYPES = ["increase_tick_speed", "decrease_tick_speed"]
+MAGIC_APPLE_SPAWN_PROBABILITY = 0.1
 
 # Obstacle Constants
 OBSTACLE_COLOR = (100, 100, 100)  # Gray
@@ -77,6 +78,7 @@ def get_sound_file_path(folder, filename):
     return file_path
 
 APPLE_EAT_SOUND_FILE = get_sound_file_path(SOUND_FOLDER, "apple-eat.wav")
+MAGIC_APPLE_EAT_SOUND_FILE = get_sound_file_path(SOUND_FOLDER, "magic-apple-eat.wav")
 BITE_SELF_SOUND_FILE = get_sound_file_path(SOUND_FOLDER, "bite-self.wav")
 BITE_OBSTACLE_SOUND_FILE = get_sound_file_path(SOUND_FOLDER, "bite-obstacle.wav")
 REMOVE_OBSTACLE_SOUND_FILE = get_sound_file_path(SOUND_FOLDER, "remove-obstacle.wav")
