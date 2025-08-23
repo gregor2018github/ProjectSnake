@@ -1,7 +1,5 @@
 import pygame
-import sys
 import random
-import os # Import os for path joining
 from pygame.locals import *
 from pygame import mixer # Import mixer
 from time import sleep
@@ -20,6 +18,7 @@ class Game:
         self.screen = Screen() # Uses constants defined in screen.py/constants.py
         self.clock = pygame.time.Clock()
         self.high_scores = hs.load_high_scores() # Uses function from high_scores.py
+        self.gameover = False
 
         # Initialize sound attributes to None
         self.apple_eat_sound = None
@@ -354,11 +353,54 @@ class Game:
                     if event.key == K_RETURN:
                         waiting_for_input = False  # Exit waiting loop
                         self.running = True  # Ensure game continues
+    
+    def wait_for_enter_after_death(self):
+        """Game pauses and awaits 'Enter'. Other buttons cannot be pressed. In the meantime a random joke sentence will pass over the screen."""
+        # chose random joke from the death message list
+        joke_text = random.choice(C.Death_Messages)
+        text_height_start = random.randint(50, C.SCREEN_HEIGHT-100)
+        current_text_height = text_height_start
+        # measure rendered text width and pick an X so the text stays fully on-screen
+        font_size = 20
+        font = pygame.font.Font(None, font_size)
+        text_pixel_width, _ = font.size(joke_text)
+        current_text_width = text_pixel_width / 1.5 + 20
+
+        self.running = False # Pause the game loop
+        self.screen.draw_bottom_message(message="Press ENTER to continue...", size=20)
+        self.screen.update()
+        waiting_for_input = True
+        static_background = self.screen.surface.copy() # save the current visuals to rerender it
+        while waiting_for_input:
+            self.clock.tick(15)  # Lower tick rate for game over screen
+            # reprint the last screen
+            self.screen.surface.blit(static_background, (0, 0))
+            # display the joke text
+            self.screen.draw_message_at_x_y(joke_text, current_text_width, current_text_height, 20)
+            
+            # change position for next frame
+            if text_height_start < C.SCREEN_HEIGHT/2: # sometimes text goes up, sometimes down, depending on where it starts
+                current_text_height += 1
+            else:
+                current_text_height -= 1     
+            current_text_width += 1 # text always goes towards the right
+            self.screen.update()
+
+            # check for the user to press enter
+            for event in pygame.event.get():
+                if event.type == QUIT:
+                    self.running = False
+                    waiting_for_input = False
+                elif event.type == KEYDOWN:
+                    if event.key == K_RETURN:
+                        waiting_for_input = False  # Exit waiting loop
+                        self.running = True  # Ensure game continues
+
 
     def game_over(self):
         """ Handles the game over sequence, including high score check and restart prompt. """
-        self.running = False # Stop the main game loop
-        self.wait_for_enter()
+        self.gameover = True
+        self.wait_for_enter_after_death()
         self.running = True # Allow the game to continue for restart or quit
         insert_pos = self.check_and_update_high_scores(self.score)
 

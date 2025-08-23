@@ -1,13 +1,13 @@
 # ProjectSnake - TODO List
 
 ## Current Tasks
-- [ ] Show funny sentences that appear when player dies
+- [ ] Add Random items that can spawn with a limited lifetime, when player eats them, random buffs and actions will take place
 
 ## Backlog
-- [ ] Add Random items that can spawn with a limited lifetime, when player eats them, random buffs and actions will take place
 - [ ] Collect more statistics during playthrough
 - [ ] Display more statistics in Highscore
 - [ ] Ask if player really wants to quit after pressing ESC
+- [ ] fix bug that no noise is caused anymore by the snake biting itself
 
 ## Completed Tasks
 - [x] Initial project setup
@@ -16,8 +16,24 @@
 - [x] Fix bug that snake can bite itself with quick direction changes (e.g., down-left-up)
 - [x] stop the game before it goes to the highscores so player can see where it went wrong
 - [x] Implement game pause functionality
+- [x] Show provocative sentences that appear when player dies
 
 ## Notes & Ideas
+- Ideas for special items/power-ups:
+    - faster movement speed
+    - slower movement speed
+    - eat without growing
+    - shield that holds x hits (permanent buff)
+    - temporary invincibility
+    - snake is not moving automatically anymore, it must be moved manually
+    - game has realistic look with little gifs instead of pixels (permanent buff)
+    - game colors invert (permanent buff)
+    - apple is pulsing between visible and invisible
+    - ghost snake which can go through obstacles
+    - snake can shoot projectiles
+    - level enlarges
+    - level becomes smaller
+
 - Local Multiplayer (WASD vs Arrowkeys)
 - Special perks to pick up (e.g., speed boost, invincibility)
 - Health system for the snake (e.g., if it hits an obstacle, it loses health instead of dying)

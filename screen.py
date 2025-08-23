@@ -49,6 +49,13 @@ class Screen:
         text_rect = game_over_text.get_rect(center=(C.GAME_OVER_POS[0], C.GAME_OVER_POS[1] - 100)) # Raised position
         self.surface.blit(game_over_text, text_rect)
 
+    def draw_message_at_x_y(self: object, message: str, x: int, y: int, size: int) -> None:
+        """Draws a message at a specific (x, y) position on the screen."""
+        font = pygame.font.SysFont('Arial', size)
+        text_surface = font.render(message, True, C.TEXT_COLOR)
+        text_rect = text_surface.get_rect(center=(x, y))
+        self.surface.blit(text_surface, text_rect)
+
     def draw_bottom_message(self: object, message: str, size: int) -> None:
         """Draws a message at the bottom of the screen."""
         font = pygame.font.SysFont('Arial', size)
