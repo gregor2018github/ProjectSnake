@@ -1,9 +1,11 @@
 # ProjectSnake - TODO List
 
 ## Current Tasks
-- [ ] stop the game before it goes to the highscores so player can see where it went wrong
+- [ ] Implement game pause functionality
 
 ## Backlog
+- [ ] Show funny sentences that appear when player dies
+- [ ] Add Random items that can spawn with a limited lifetime, when player eats them, random buffs and actions will take place
 - [ ] Collect more statistics during playthrough
 - [ ] Display more statistics in Highscore
 
@@ -12,6 +14,7 @@
 - [x] Change Apple Removal Particles into something circular around the epicentrum instead of dusk inside the epicentrum
 - [x] Obstacles must spawn with a minimum distance from the snake head
 - [x] Fix bug that snake can bite itself with quick direction changes (e.g., down-left-up)
+- [x] stop the game before it goes to the highscores so player can see where it went wrong
 
 ## Notes & Ideas
 - Local Multiplayer (WASD vs Arrowkeys)
