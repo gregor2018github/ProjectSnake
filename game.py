@@ -139,7 +139,7 @@ class Game:
                 self.particle_effects.append(ParticleEffect(x, y, obstacle_settings["effect_type"], is_spawning=True))
                 break
 
-    def _check_level_update(self):
+    def _check_for_level_up(self):
         """Checks if the player should advance to the next level"""
         previous_level = self.level
         
@@ -156,8 +156,8 @@ class Game:
             # Flag to start removing diagonal obstacles when transitioning to level 4
             self.removing_diagonal_obstacles = True
 
-    def _update_level_mechanics(self):
-        """Updates level-specific mechanics"""
+    def _update_mechanics_and_objects(self):
+        """Updates mechanics, basically a collection folder for everything that must be checked."""
         if self.level == 2:
             # In level 2, remove static obstacles with dust particles
             if len(self.obstacles) > 0 and self.frame_counter % C.OBSTACLE_REMOVAL_INTERVAL == 0:
@@ -202,7 +202,13 @@ class Game:
         # Update moving obstacles
         for moving_obstacle in self.moving_obstacles:
             moving_obstacle.update(self.snake, self.obstacles)
-                
+
+        # Update magical apples
+        for magic_apple in list(self.magic_apples):
+            life_span = magic_apple.update()
+            if life_span <= 0:
+                self.magic_apples.remove(magic_apple)
+
         # Increment frame counter
         self.frame_counter += 1
 
@@ -247,10 +253,10 @@ class Game:
             return # Stop further updates if game over occurred
 
         # Check if player advances to next level
-        self._check_level_update()
+        self._check_for_level_up()
         
         # Apply level-specific mechanics
-        self._update_level_mechanics()
+        self._update_mechanics_and_objects()
         
         # Update particle effects and remove finished ones
         self.particle_effects = [effect for effect in self.particle_effects if effect.update()]

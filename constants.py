@@ -52,7 +52,8 @@ APPLE_SIZE = (GRID_SIZE, GRID_SIZE)
 MAGIC_APPLE_COLOR = (255, 215, 0)  # Gold
 MAGIC_APPLE_SIZE = (GRID_SIZE, GRID_SIZE)
 MAGIC_APPLE_TYPES = ["increase_tick_speed", "decrease_tick_speed"]
-MAGIC_APPLE_SPAWN_PROBABILITY = 0.1
+MAGIC_APPLE_SPAWN_PROBABILITY = 0.1  # Probability of spawning a magic apple when eating a normal apple
+MAGIC_APPLE_LIFESPAN = 50  # Lifespan in ticks
 
 # Obstacle Constants
 OBSTACLE_COLOR = (100, 100, 100)  # Gray

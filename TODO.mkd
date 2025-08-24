@@ -1,22 +1,26 @@
 # ProjectSnake - TODO List
 
 ## Current Tasks
-- [ ] Add Random items that can spawn with a limited lifetime, when player eats them, random buffs and actions will take place
+- [ ] Magic Apple needs visual indicator to show its lifespan
 
 ## Backlog
+- [ ] Levels must not be linked to the points of the player but to the number of normal apples eaten
+- [ ] Magic apple must give a random buff to the player when eaten
 - [ ] Collect more statistics during playthrough
 - [ ] Display more statistics in Highscore
 - [ ] Ask if player really wants to quit after pressing ESC
 - [ ] fix bug that no noise is caused anymore by the snake biting itself
 
 ## Completed Tasks
-- [x] Initial project setup
+- [x] Initial project setup.
 - [x] Change Apple Removal Particles into something circular around the epicentrum instead of dusk inside the epicentrum
 - [x] Obstacles must spawn with a minimum distance from the snake head
 - [x] Fix bug that snake can bite itself with quick direction changes (e.g., down-left-up)
 - [x] stop the game before it goes to the highscores so player can see where it went wrong
 - [x] Implement game pause functionality
 - [x] Show provocative sentences that appear when player dies
+- [x] Create new item "Magic Apple"
+- [x] Magic apple must automatically despawn after a certain amount of ticks
 
 ## Notes & Ideas
 - Ideas for special items/power-ups:

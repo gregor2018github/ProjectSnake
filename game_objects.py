@@ -137,10 +137,13 @@ class MagicApple(GameObject):
     def __init__(self, x, y):
         super().__init__(x, y, C.MAGIC_APPLE_SIZE[0], C.MAGIC_APPLE_SIZE[1], C.MAGIC_APPLE_COLOR)
         self.type = random.choice(C.MAGIC_APPLE_TYPES)
-        self.lifespan = 100  # Default lifespan until object despawns automatically
+        self.lifespan = C.MAGIC_APPLE_LIFESPAN + random.uniform(-0.5, 0.5) * C.MAGIC_APPLE_LIFESPAN # Default lifespan + random variation
+        print(f"Magic Apple lifespan: {self.lifespan}")
 
     def update(self):
+        """Updates and returns the magic apple's lifetime"""
         self.lifespan -= 1
+        return self.lifespan
 
 class Obstacle(GameObject):
     """ Represents an obstacle """
