@@ -1,15 +1,10 @@
 # ProjectSnake - TODO List
 
 ## Current Tasks
-- [ ] Magic Apple needs visual indicator to show its lifespan
+- [ ] Ask if player really wants to quit after pressing ESC
 
 ## Backlog
-- [ ] Levels must not be linked to the points of the player but to the number of normal apples eaten
-- [ ] Magic apple must give a random buff to the player when eaten
-- [ ] Collect more statistics during playthrough
-- [ ] Display more statistics in Highscore
-- [ ] Ask if player really wants to quit after pressing ESC
-- [ ] fix bug that no noise is caused anymore by the snake biting itself
+- [ ] Collect more statistics during playthrough (e.g. longest snake, most apples in a row)
 
 ## Completed Tasks
 - [x] Initial project setup.
@@ -21,6 +16,12 @@
 - [x] Show provocative sentences that appear when player dies
 - [x] Create new item "Magic Apple"
 - [x] Magic apple must automatically despawn after a certain amount of ticks
+- [x] Magic Apple visual lifespan indicator (green→red border)
+- [x] Levels now progress by apples eaten (not score): L2=10, L3=20, L4=35
+- [x] Magic apple buffs implemented: Speed+, Slow, Ghost mode, No-Grow
+- [x] Active buff HUD shown in top-right corner during gameplay
+- [x] Run stats (apples eaten, time, max level) shown on death screen
+- [x] Fix bite-self sound missing None-guard (magic_apple_eat_sound)
 
 ## Notes & Ideas
 - Ideas for special items/power-ups:

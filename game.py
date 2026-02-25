@@ -7,6 +7,7 @@ from time import sleep
 # Use absolute imports
 import constants as C
 import high_scores as hs
+import magic_apple_logic as mal
 from game_objects import Snake, Apple, MagicApple, Obstacle, MovingObstacle, ParticleEffect, OrthogonalMovingObstacle
 from screen import Screen
 
@@ -22,6 +23,7 @@ class Game:
 
         # Initialize sound attributes to None
         self.apple_eat_sound = None
+        self.magic_apple_eat_sound = None
         self.bite_self_sound = None
         self.bite_obstacle_sound = None
         self.remove_obstacle_sound = None
@@ -140,20 +142,18 @@ class Game:
                 break
 
     def _check_for_level_up(self):
-        """Checks if the player should advance to the next level"""
-        previous_level = self.level
-        
-        if self.level == 1 and self.score >= C.LEVEL_2_SCORE:
+        """Checks if the player should advance to the next level (based on apples eaten)."""
+        if self.level == 1 and self.apples_eaten >= C.LEVEL_2_APPLES:
             self.level = 2
-            # Flag to start removing static obstacles when transitioning to level 2
+            self.max_level_reached = 2
             self.removing_static_obstacles = True
-        elif self.level == 2 and self.score >= C.LEVEL_3_SCORE:
+        elif self.level == 2 and self.apples_eaten >= C.LEVEL_3_APPLES:
             self.level = 3
-            # Flag to start removing orthogonal obstacles when transitioning to level 3
+            self.max_level_reached = 3
             self.removing_orthogonal_obstacles = True
-        elif self.level == 3 and self.score >= C.LEVEL_4_SCORE:
+        elif self.level == 3 and self.apples_eaten >= C.LEVEL_4_APPLES:
             self.level = 4
-            # Flag to start removing diagonal obstacles when transitioning to level 4
+            self.max_level_reached = 4
             self.removing_diagonal_obstacles = True
 
     def _update_mechanics_and_objects(self):
@@ -236,6 +236,14 @@ class Game:
                     # Store the intended direction instead of changing immediately
                     self.next_direction = new_dir
 
+    def _tick_active_buffs(self):
+        """Decrement all active buff timers; restore speed when speed buffs expire."""
+        expired = [k for k, v in self.active_buffs.items() if v <= 1]
+        for key in expired:
+            if key in ('increase_tick_speed', 'decrease_tick_speed'):
+                self.game_speed = self.base_speed
+        self.active_buffs = {k: v - 1 for k, v in self.active_buffs.items() if v > 1}
+
     def update_game_state(self):
         """ Updates the position of the snake. """
         # Apply the buffered direction change before moving
@@ -252,12 +260,18 @@ class Game:
             self.game_over()
             return # Stop further updates if game over occurred
 
+        # Tick buff timers
+        self._tick_active_buffs()
+
+        # Track time alive
+        self.time_alive += 1
+
         # Check if player advances to next level
         self._check_for_level_up()
-        
+
         # Apply level-specific mechanics
         self._update_mechanics_and_objects()
-        
+
         # Update particle effects and remove finished ones
         self.particle_effects = [effect for effect in self.particle_effects if effect.update()]
 
@@ -266,10 +280,12 @@ class Game:
         # Snake eating apple
         if self.snake.collides_with_rect(self.apple.rect):
             self.score += 1
-            self.snake.grow()
-            if self.apple_eat_sound: 
+            self.apples_eaten += 1
+            if 'no_grow' not in self.active_buffs:
+                self.snake.grow()
+            if self.apple_eat_sound:
                 self.apple_eat_sound.play()
-                
+
             # Level-specific behaviors when apple is eaten
             if self.level == 1:
                 self._add_obstacle("static")
@@ -277,14 +293,11 @@ class Game:
                 self._add_obstacle("orthogonal")
             elif self.level == 3:
                 self._add_obstacle("diagonal")
-                
-            # Store old apple position to create dust effect
-            # old_x, old_y = self.apple.x, self.apple.y
 
             # Respawn apple, ensuring it's not on the snake or obstacles
             self.apple.respawn(self._get_occupied_positions())
 
-            # sometimes a magical apple spawns when a normal apple was eaten
+            # Sometimes a magic apple spawns when a normal apple was eaten
             if random.random() < C.MAGIC_APPLE_SPAWN_PROBABILITY:
                 self._add_magic_apple()
 
@@ -295,16 +308,21 @@ class Game:
                 self.snake.grow()
                 if self.magic_apple_eat_sound:
                     self.magic_apple_eat_sound.play()
+                # Dispatch buff effect
+                fn = getattr(mal, magic_apple.type, None)
+                if fn:
+                    fn(self)
                 self.magic_apples.remove(magic_apple)
                 break
 
-        # Snake hitting obstacles
-        if self.snake.collides_with_obstacles(self.obstacles):
-            if self.bite_obstacle_sound: 
-                self.bite_obstacle_sound.play()
-            self.game_over()
-            
-        # Snake head hitting moving obstacles
+        # Snake hitting static obstacles (bypassed during ghost_mode)
+        if 'ghost_mode' not in self.active_buffs:
+            if self.snake.collides_with_obstacles(self.obstacles):
+                if self.bite_obstacle_sound:
+                    self.bite_obstacle_sound.play()
+                self.game_over()
+
+        # Snake head hitting moving obstacles (ghost does not bypass moving obstacles)
         for moving_obstacle in self.moving_obstacles:
             if moving_obstacle.collides_with_snake_head(self.snake):
                 if self.bite_obstacle_sound:
@@ -324,9 +342,10 @@ class Game:
             self.screen.draw_element(obstacle)
         for moving_obstacle in self.moving_obstacles:
             self.screen.draw_element(moving_obstacle)
-            
+
         self.screen.draw_score(self.score)
         self.screen.draw_level(self.level)
+        self.screen.draw_buffs(self.active_buffs)
         self.screen.update()
 
     def check_and_update_high_scores(self, current_score):
@@ -470,9 +489,9 @@ class Game:
 
         # Display final game over screen with scores and restart prompt
         self.screen.clear()
-        # Use the new separated drawing methods
         self.screen.draw_game_over_message(self.score)
-        self.screen.draw_high_score_list(self.high_scores) # Draw the list now
+        self.screen.draw_run_stats(self.apples_eaten, self.time_alive, self.max_level_reached)
+        self.screen.draw_high_score_list(self.high_scores)
         self.screen.show_restart_prompt()
         self.screen.update()
 
@@ -498,21 +517,24 @@ class Game:
     def reset(self):
         """ Resets the game state for a new game. """
         self.snake = Snake()
-        self.obstacles = [] # Start with no obstacles
-        self.moving_obstacles = [] # Start with no moving obstacles
-        self.magic_apples = [] # Start with no magic apples
-        self.particle_effects = [] # Initialize empty list for particle effects
+        self.obstacles = []
+        self.moving_obstacles = []
+        self.magic_apples = []
+        self.particle_effects = []
         self.apple = self._create_initial_apple()
         self.score = 0
+        self.apples_eaten = 0
+        self.time_alive = 0
         self.level = 1
+        self.max_level_reached = 1
         self.frame_counter = 0
+        self.base_speed = C.SNAKE_SPEED_INITIAL
         self.game_speed = C.SNAKE_SPEED_INITIAL
-        self.next_direction = None # Reset direction buffer
-        # Flag to track if we need to remove orthogonal obstacles gradually
+        self.active_buffs = {}
+        self.next_direction = None
+        self.removing_static_obstacles = False
         self.removing_orthogonal_obstacles = False
-        self.orthogonal_removal_counter = 0
-        # self.running should already be True if reset is called from game_over
-        # If called initially, set it here.
+        self.removing_diagonal_obstacles = False
         self.running = True
 
     def run(self):

@@ -30,9 +30,9 @@ PULSE_LIFESPAN = 15  # How many frames the pulse lasts
 PULSE_COUNT = 3  # Number of pulse circles per effect
 
 # Level System Constants
-LEVEL_2_SCORE = 25
-LEVEL_3_SCORE = 45
-LEVEL_4_SCORE = 65
+LEVEL_2_APPLES = 10   # normal apples eaten to reach level 2
+LEVEL_3_APPLES = 20   # normal apples eaten to reach level 3
+LEVEL_4_APPLES = 35   # normal apples eaten to reach level 4
 OBSTACLE_REMOVAL_INTERVAL = 4 # every x ticks one obstacle is removed
 MOVING_OBSTACLE_REMOVAL_INTERVAL = 4 # ticks between removing orthogonal obstacles
 
@@ -51,9 +51,23 @@ APPLE_SIZE = (GRID_SIZE, GRID_SIZE)
 
 MAGIC_APPLE_COLOR = (255, 215, 0)  # Gold
 MAGIC_APPLE_SIZE = (GRID_SIZE, GRID_SIZE)
-MAGIC_APPLE_TYPES = ["increase_tick_speed", "decrease_tick_speed"]
+MAGIC_APPLE_TYPES = ["increase_tick_speed", "decrease_tick_speed", "ghost_mode", "no_grow"]
 MAGIC_APPLE_SPAWN_PROBABILITY = 0.1  # Probability of spawning a magic apple when eating a normal apple
 MAGIC_APPLE_LIFESPAN = 50  # Lifespan in ticks
+
+# Magic Apple Buff Durations (in ticks)
+BUFF_DURATION_SPEED_UP = 60
+BUFF_DURATION_SPEED_DOWN = 60
+BUFF_DURATION_GHOST = 50
+BUFF_DURATION_NO_GROW = 40
+
+# Buff HUD display info: buff_key -> (label, RGB color)
+BUFF_DISPLAY_NAMES = {
+    'increase_tick_speed': ('Speed+', (80, 220, 80)),
+    'decrease_tick_speed': ('Slow',   (220, 80,  80)),
+    'ghost_mode':          ('Ghost',  (120, 180, 255)),
+    'no_grow':             ('No Grow',(80,  220, 80)),
+}
 
 # Obstacle Constants
 OBSTACLE_COLOR = (100, 100, 100)  # Gray

@@ -137,13 +137,26 @@ class MagicApple(GameObject):
     def __init__(self, x, y):
         super().__init__(x, y, C.MAGIC_APPLE_SIZE[0], C.MAGIC_APPLE_SIZE[1], C.MAGIC_APPLE_COLOR)
         self.type = random.choice(C.MAGIC_APPLE_TYPES)
-        self.lifespan = C.MAGIC_APPLE_LIFESPAN + random.uniform(-0.5, 0.5) * C.MAGIC_APPLE_LIFESPAN # Default lifespan + random variation
-        print(f"Magic Apple lifespan: {self.lifespan}")
+        self.lifespan = C.MAGIC_APPLE_LIFESPAN + random.uniform(-0.5, 0.5) * C.MAGIC_APPLE_LIFESPAN
+        self.initial_lifespan = self.lifespan
 
     def update(self):
         """Updates and returns the magic apple's lifetime"""
         self.lifespan -= 1
         return self.lifespan
+
+    def draw(self, surface):
+        """Draw the apple with a green→red border indicating remaining lifespan."""
+        super().draw(surface)
+        ratio = max(0.0, self.lifespan / self.initial_lifespan)
+        r = int(255 * (1.0 - ratio))
+        g = int(255 * ratio)
+        border_color = (r, g, 0)
+        pygame.draw.rect(
+            surface, border_color,
+            pygame.Rect(self.x * C.GRID_SIZE, self.y * C.GRID_SIZE, C.GRID_SIZE, C.GRID_SIZE),
+            2
+        )
 
 class Obstacle(GameObject):
     """ Represents an obstacle """

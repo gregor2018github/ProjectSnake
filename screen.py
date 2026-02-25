@@ -46,7 +46,7 @@ class Screen:
         """Draws only the 'Game Over! Score: X' message."""
         game_over_text = self.game_over_font.render(f'Game Over! Score: {score}', True, C.TEXT_COLOR)
         # Adjust vertical position slightly if needed, maybe higher to accommodate input box later
-        text_rect = game_over_text.get_rect(center=(C.GAME_OVER_POS[0], C.GAME_OVER_POS[1] - 100)) # Raised position
+        text_rect = game_over_text.get_rect(center=(C.GAME_OVER_POS[0], C.GAME_OVER_POS[1] - 130))
         self.surface.blit(game_over_text, text_rect)
 
     def draw_message_at_x_y(self: object, message: str, x: int, y: int, size: int) -> None:
@@ -101,6 +101,31 @@ class Screen:
         prompt_text = self.prompt_font.render("Press ENTER to restart (ESC to quit)", True, C.TEXT_COLOR)
         prompt_rect = prompt_text.get_rect(center=C.RESTART_PROMPT_POS)
         self.surface.blit(prompt_text, prompt_rect)
+
+    def draw_buffs(self, active_buffs):
+        """Draws active buff pills in the top-right corner."""
+        if not active_buffs:
+            return
+        x_right = self.width - 8
+        y = 10
+        for buff_key, ticks_left in active_buffs.items():
+            label, color = C.BUFF_DISPLAY_NAMES.get(buff_key, (buff_key, C.TEXT_COLOR))
+            text = self.high_score_font.render(f"{label} ({ticks_left})", True, color)
+            text_rect = text.get_rect(topright=(x_right, y))
+            self.surface.blit(text, text_rect)
+            y += text_rect.height + 4
+
+    def draw_run_stats(self, apples_eaten, time_ticks, max_level):
+        """Draws per-run stats (apples, time, max level) on the death screen."""
+        seconds = time_ticks // 10  # game runs at SNAKE_SPEED_INITIAL ticks/sec
+        stats_text = (
+            f"Apples: {apples_eaten}   |   "
+            f"Time: {seconds}s   |   "
+            f"Max Level: {max_level}"
+        )
+        surf = self.high_score_font.render(stats_text, True, (180, 180, 180))
+        rect = surf.get_rect(center=(self.width // 2, C.GAME_OVER_POS[1] - 90))
+        self.surface.blit(surf, rect)
 
     def update(self):
         pygame.display.update()
