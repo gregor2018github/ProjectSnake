@@ -251,7 +251,7 @@ class Game:
             self.snake.change_direction(self.next_direction)
             self.next_direction = None # Clear the buffer
 
-        if not self.snake.move(): # move() returns False on collision (self or wall if enabled)
+        if not self.snake.move(ghost='ghost_mode' in self.active_buffs): # move() returns False on collision (self or wall if enabled)
             # Check if the collision was with self
             head = self.snake.get_head_position()
             if head in self.snake.positions[1:]: # Check against body segments
@@ -322,12 +322,13 @@ class Game:
                     self.bite_obstacle_sound.play()
                 self.game_over()
 
-        # Snake head hitting moving obstacles (ghost does not bypass moving obstacles)
-        for moving_obstacle in self.moving_obstacles:
-            if moving_obstacle.collides_with_snake_head(self.snake):
-                if self.bite_obstacle_sound:
-                    self.bite_obstacle_sound.play()
-                self.game_over()
+        # Snake head hitting moving obstacles (bypassed during ghost_mode)
+        if 'ghost_mode' not in self.active_buffs:
+            for moving_obstacle in self.moving_obstacles:
+                if moving_obstacle.collides_with_snake_head(self.snake):
+                    if self.bite_obstacle_sound:
+                        self.bite_obstacle_sound.play()
+                    self.game_over()
 
     def draw(self):
         """ Draws all game elements onto the screen. """

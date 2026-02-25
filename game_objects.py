@@ -49,7 +49,7 @@ class Snake:
         # Returns float grid position
         return self.float_x, self.float_y
 
-    def move(self):
+    def move(self, ghost=False):
         dx, dy = self.direction
         cur_x, cur_y = self.get_head_position()
         if C.WALL_COLLISION:
@@ -59,9 +59,8 @@ class Snake:
         else:
             new_head_grid = ((cur_x + dx) % C.GRID_WIDTH, (cur_y + dy) % C.GRID_HEIGHT)
 
-        # Check for self-collision using integer grid positions
-        # Only check if the grid position actually changed to avoid false positives with float movement
-        if new_head_grid != self.positions[0] and new_head_grid in self.positions[1:]:
+        # Check for self-collision (bypassed in ghost mode)
+        if not ghost and new_head_grid != self.positions[0] and new_head_grid in self.positions[1:]:
             return False # Self-collision
 
         # Insert new head position (always integer grid coordinates for body segments)
