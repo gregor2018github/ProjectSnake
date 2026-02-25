@@ -38,6 +38,8 @@ class Snake:
         # Initialize float coordinates for the head
         self.float_x = float(start_x)
         self.float_y = float(start_y)
+        # Visual state – set by Game.draw() each frame
+        self.ghost_alpha = 255
 
     def get_head_position(self):
         # Returns integer grid position (compatible with existing logic)
@@ -80,16 +82,56 @@ class Snake:
         self.length += 1
 
     def draw(self, surface):
-        # Draw head, use integer grid position for head rect
+        inset = C.SNAKE_SEGMENT_INSET
+        seg_size = C.GRID_SIZE - 2 * inset
+        n = len(self.positions)
+        use_alpha = self.ghost_alpha < 255
+
+        # Helper: draw one inset rect (with optional alpha) onto `surface`
+        def _draw_seg(sx, sy, color):
+            rx = sx * C.GRID_SIZE + inset
+            ry = sy * C.GRID_SIZE + inset
+            if use_alpha:
+                s = pygame.Surface((seg_size, seg_size), pygame.SRCALPHA)
+                s.fill((*color, self.ghost_alpha))
+                surface.blit(s, (rx, ry))
+            else:
+                pygame.draw.rect(surface, color, pygame.Rect(rx, ry, seg_size, seg_size))
+
+        # Head
         head_x, head_y = self.positions[0]
-        head_rect = pygame.Rect(head_x * C.GRID_SIZE, head_y * C.GRID_SIZE, self.size, self.size)
+        _draw_seg(head_x, head_y, self.head_color)
 
-        pygame.draw.rect(surface, self.head_color, head_rect)
-
-        # Draw body segments (always based on integer grid positions)
+        # Body with gradient: green channel fades from 200 (near head) to 70 (tail)
         for i, (x, y) in enumerate(self.positions[1:]):
-            segment_rect = pygame.Rect(x * C.GRID_SIZE, y * C.GRID_SIZE, self.size, self.size)
-            pygame.draw.rect(surface, self.color, segment_rect)
+            t = i / max(n - 2, 1)
+            g = int(200 - t * 130)   # 200 → 70
+            _draw_seg(x, y, (0, g, 0))
+
+        # Eyes on head (2 small white dots)
+        dx, dy = self.direction
+        cx = head_x * C.GRID_SIZE + C.GRID_SIZE // 2
+        cy = head_y * C.GRID_SIZE + C.GRID_SIZE // 2
+        r = C.SNAKE_EYE_RADIUS
+        offset = C.GRID_SIZE // 2 - r - 2
+        # Perpendicular axis to movement
+        if dx == 0:   # moving up/down → eyes side by side horizontally
+            eye1 = (cx - offset, cy + dy * offset)
+            eye2 = (cx + offset, cy + dy * offset)
+        else:         # moving left/right → eyes side by side vertically
+            eye1 = (cx + dx * offset, cy - offset)
+            eye2 = (cx + dx * offset, cy + offset)
+
+        eye_color = (255, 255, 255) if not use_alpha else (255, 255, 255)
+        eye_alpha = self.ghost_alpha
+        if use_alpha:
+            for ex, ey in (eye1, eye2):
+                s = pygame.Surface((r * 2, r * 2), pygame.SRCALPHA)
+                pygame.draw.circle(s, (255, 255, 255, eye_alpha), (r, r), r)
+                surface.blit(s, (int(ex) - r, int(ey) - r))
+        else:
+            for ex, ey in (eye1, eye2):
+                pygame.draw.circle(surface, eye_color, (int(ex), int(ey)), r)
 
     def collides_with_rect(self, rect):
         # Collision check based on the integer grid head position's rect
@@ -113,6 +155,17 @@ class Apple(GameObject):
     """ Represents the apple """
     def __init__(self, x, y):
         super().__init__(x, y, C.APPLE_SIZE[0], C.APPLE_SIZE[1], C.APPLE_COLOR)
+
+    def draw(self, surface):
+        """Draw a circle with a small warm-white highlight."""
+        cx = self.x * C.GRID_SIZE + C.GRID_SIZE // 2
+        cy = self.y * C.GRID_SIZE + C.GRID_SIZE // 2
+        radius = C.GRID_SIZE // 2 - 1
+        pygame.draw.circle(surface, self.color, (cx, cy), radius)
+        # Small highlight in upper-right quadrant
+        hx = cx + radius // 3
+        hy = cy - radius // 3
+        pygame.draw.circle(surface, C.APPLE_HIGHLIGHT_COLOR, (hx, hy), 2)
 
     def respawn(self, occupied_positions):
         """ Respawn apple in a free grid location """
@@ -146,22 +199,36 @@ class MagicApple(GameObject):
         return self.lifespan
 
     def draw(self, surface):
-        """Draw the apple with a green→red border indicating remaining lifespan."""
-        super().draw(surface)
+        """Draw a gold circle with a green→red outline indicating remaining lifespan."""
+        cx = self.x * C.GRID_SIZE + C.GRID_SIZE // 2
+        cy = self.y * C.GRID_SIZE + C.GRID_SIZE // 2
+        radius = C.GRID_SIZE // 2 - 1
+        pygame.draw.circle(surface, self.color, (cx, cy), radius)
+        # Highlight
+        hx = cx + radius // 3
+        hy = cy - radius // 3
+        pygame.draw.circle(surface, C.APPLE_HIGHLIGHT_COLOR, (hx, hy), 2)
+        # Lifespan border: green → red circle outline
         ratio = max(0.0, self.lifespan / self.initial_lifespan)
-        r = int(255 * (1.0 - ratio))
-        g = int(255 * ratio)
-        border_color = (r, g, 0)
-        pygame.draw.rect(
-            surface, border_color,
-            pygame.Rect(self.x * C.GRID_SIZE, self.y * C.GRID_SIZE, C.GRID_SIZE, C.GRID_SIZE),
-            2
-        )
+        border_color = (int(255 * (1.0 - ratio)), int(255 * ratio), 0)
+        pygame.draw.circle(surface, border_color, (cx, cy), radius, 2)
+
+def _draw_beveled_rect(surface, color, rect):
+    """Draw a filled rect with a lighter inner highlight for a 3-D bevel look."""
+    pygame.draw.rect(surface, color, rect)
+    r, g, b = color
+    light = (min(r + 45, 255), min(g + 45, 255), min(b + 45, 255))
+    inner = pygame.Rect(rect.x + 2, rect.y + 2, rect.w - 4, rect.h - 4)
+    if inner.w > 0 and inner.h > 0:
+        pygame.draw.rect(surface, light, inner)
 
 class Obstacle(GameObject):
     """ Represents an obstacle """
     def __init__(self, x, y):
         super().__init__(x, y, C.OBSTACLE_SIZE[0], C.OBSTACLE_SIZE[1], C.OBSTACLE_COLOR)
+
+    def draw(self, surface):
+        _draw_beveled_rect(surface, self.color, self.rect)
 
 class MovingObstacle(GameObject):
     """ Represents a moving obstacle """
@@ -259,12 +326,10 @@ class MovingObstacle(GameObject):
 
     def draw(self, surface):
         # Draw based on the floating-point position for smooth movement
-        # Calculate screen coordinates directly from float_x/y
         screen_x = self.float_x * C.GRID_SIZE
         screen_y = self.float_y * C.GRID_SIZE
-        # Create a temporary rect for drawing at the precise location
         draw_rect = pygame.Rect(screen_x, screen_y, self.width, self.height)
-        pygame.draw.rect(surface, self.color, draw_rect)
+        _draw_beveled_rect(surface, self.color, draw_rect)
 
     def collides_with_snake_head(self, snake):
         # Use rectangle collision based on screen coordinates

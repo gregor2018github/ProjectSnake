@@ -100,8 +100,17 @@ REMOVE_OBSTACLE_SOUND_FILE = get_sound_file_path(SOUND_FOLDER, "remove-obstacle.
 
 # UI and Display Constants
 BACKGROUND_COLOR = (0, 0, 0)
+GRID_LINE_COLOR = (12, 12, 12)      # Barely-visible grid overlay
 TEXT_COLOR = (255, 255, 255)
 SCORE_POS = (10, 10)
+
+# Snake Visual Constants
+SNAKE_SEGMENT_INSET = 1             # px inset on each side of every segment rect
+SNAKE_EYE_RADIUS = 2                # px radius of each eye dot
+SNAKE_GHOST_ALPHA = 80              # alpha of snake during ghost mode (0-255)
+
+# Apple Visual Constants
+APPLE_HIGHLIGHT_COLOR = (255, 255, 200)  # Warm-white highlight dot
 GAME_OVER_POS = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
 
 # High Score Constants

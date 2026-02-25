@@ -334,6 +334,7 @@ class Game:
         self.screen.clear()
         for effect in self.particle_effects:
             effect.draw(self.screen.surface)
+        self.snake.ghost_alpha = C.SNAKE_GHOST_ALPHA if 'ghost_mode' in self.active_buffs else 255
         self.screen.draw_element(self.snake)
         self.screen.draw_element(self.apple)
         for magic_apple in self.magic_apples:
@@ -343,8 +344,7 @@ class Game:
         for moving_obstacle in self.moving_obstacles:
             self.screen.draw_element(moving_obstacle)
 
-        self.screen.draw_score(self.score)
-        self.screen.draw_level(self.level)
+        self.screen.draw_score_and_level(self.score, self.level)
         self.screen.draw_buffs(self.active_buffs)
         self.screen.update()
 

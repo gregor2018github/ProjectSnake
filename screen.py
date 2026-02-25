@@ -26,21 +26,43 @@ class Screen:
 
     def clear(self):
         self.surface.fill(C.BACKGROUND_COLOR)
+        # Subtle grid overlay
+        for x in range(0, C.SCREEN_WIDTH, C.GRID_SIZE):
+            pygame.draw.line(self.surface, C.GRID_LINE_COLOR, (x, 0), (x, C.SCREEN_HEIGHT))
+        for y in range(0, C.SCREEN_HEIGHT, C.GRID_SIZE):
+            pygame.draw.line(self.surface, C.GRID_LINE_COLOR, (0, y), (C.SCREEN_WIDTH, y))
 
     def draw_element(self, element):
         # Assumes element has a 'draw' method that takes the surface
         element.draw(self.surface)
 
+    def _draw_hud_bar(self, rect):
+        """Draw a semi-transparent dark bar behind HUD text."""
+        pad_x, pad_y = 8, 4
+        s = pygame.Surface((rect.width + pad_x * 2, rect.height + pad_y * 2), pygame.SRCALPHA)
+        s.fill((0, 0, 0, 160))
+        self.surface.blit(s, (rect.x - pad_x, rect.y - pad_y))
+
+    def draw_score_and_level(self, score, level):
+        """Draws score and level on a single semi-transparent HUD bar."""
+        score_surf = self.font.render(f'Score: {score}', True, C.TEXT_COLOR)
+        level_surf = self.font.render(f'Level: {level}', True, C.TEXT_COLOR)
+        score_rect = score_surf.get_rect(topleft=C.SCORE_POS)
+        level_rect = level_surf.get_rect(topleft=(C.SCORE_POS[0] + 150, C.SCORE_POS[1]))
+        # One bar spanning both labels
+        combined = score_rect.union(level_rect)
+        self._draw_hud_bar(combined)
+        self.surface.blit(score_surf, score_rect)
+        self.surface.blit(level_surf, level_rect)
+
+    # Keep legacy methods for backward compatibility with other call sites (e.g. pause screen)
     def draw_score(self, score):
         score_text = self.font.render(f'Score: {score}', True, C.TEXT_COLOR)
         self.surface.blit(score_text, C.SCORE_POS)
-        
+
     def draw_level(self, level):
-        """Draws the current level on screen"""
         level_text = self.font.render(f'Level: {level}', True, C.TEXT_COLOR)
-        # Position level text to the right of the score
-        level_pos = (C.SCORE_POS[0] + 150, C.SCORE_POS[1])
-        self.surface.blit(level_text, level_pos)
+        self.surface.blit(level_text, (C.SCORE_POS[0] + 150, C.SCORE_POS[1]))
 
     def draw_game_over_message(self, score):
         """Draws only the 'Game Over! Score: X' message."""
