@@ -69,8 +69,8 @@ SHIELD_HITS = 3             # obstacle hits the shield absorbs before breaking
 
 # Buff HUD display info: buff_key -> (label, RGB color)
 BUFF_DISPLAY_NAMES = {
-    'increase_tick_speed': ('Speed+',  (80,  220,  80)),
-    'decrease_tick_speed': ('Slow',    (220,  80,  80)),
+    'increase_tick_speed': ('Speed+',  (220,  80,  80)),   # bad – red
+    'decrease_tick_speed': ('Slow',    ( 80, 220,  80)),   # good – green
     'ghost_mode':          ('Ghost',   (120, 180, 255)),
     'no_grow':             ('No Grow', ( 80, 220,  80)),
     'double_score':        ('x2 Score',(255, 200,   0)),

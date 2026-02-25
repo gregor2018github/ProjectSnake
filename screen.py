@@ -1,4 +1,6 @@
 import pygame
+import math
+import random
 import constants as C # Use absolute import
 
 class Screen:
@@ -33,6 +35,9 @@ class Screen:
         # Keep old names so legacy call sites (pause, death animation) still work
         self.game_over_font   = self.title_font
         self.high_score_font  = self.hs_entry_font
+        # Ripple wave state for the death screen animation
+        self._waves = []      # list of [cx, cy, radius]
+        self._wave_tick = 0
 
     # ------------------------------------------------------------------ helpers
     def _alpha_surface(self, w, h, color_rgba):
@@ -238,6 +243,159 @@ class Screen:
         rect = surf.get_rect(center=(C.SCREEN_WIDTH // 2, C.SCREEN_HEIGHT - 40))
         self.surface.blit(pill, (rect.x - 10, rect.y - 4))
         self.surface.blit(surf, rect)
+
+    # ------------------------------------------------------------------ wave animation
+    def reset_waves(self):
+        self._waves = []
+        self._wave_tick = 0
+
+    def tick_waves(self):
+        """Spawn and advance ripple waves one frame."""
+        self._wave_tick += 1
+        if self._wave_tick % C.WAVE_SPAWN_INTERVAL == 0:
+            self._waves.append([
+                random.randint(0, C.SCREEN_WIDTH),
+                random.randint(0, C.SCREEN_HEIGHT),
+                1
+            ])
+        for w in self._waves:
+            w[2] += C.WAVE_SPEED
+        self._waves = [w for w in self._waves if w[2] < C.WAVE_MAX_RADIUS]
+
+    def _draw_ripple_grid(self):
+        """Dark grid background with expanding ripple circles."""
+        self.surface.fill(C.BACKGROUND_COLOR)
+        for x in range(0, C.SCREEN_WIDTH + 1, C.GRID_SIZE):
+            pygame.draw.line(self.surface, C.GRID_LINE_COLOR, (x, 0), (x, C.SCREEN_HEIGHT))
+        for y in range(0, C.SCREEN_HEIGHT + 1, C.GRID_SIZE):
+            pygame.draw.line(self.surface, C.GRID_LINE_COLOR, (0, y), (C.SCREEN_WIDTH, y))
+        if not self._waves:
+            return
+        overlay = pygame.Surface((C.SCREEN_WIDTH, C.SCREEN_HEIGHT), pygame.SRCALPHA)
+        max_r = math.sqrt(C.SCREEN_WIDTH ** 2 + C.SCREEN_HEIGHT ** 2)
+        for cx, cy, radius in self._waves:
+            t = min(radius / max_r, 1.0)
+            alpha = int(180 * (1 - t))
+            b     = int(110 * (1 - t))
+            pygame.draw.circle(overlay, (0, b // 2, b, alpha),
+                                (int(cx), int(cy)), int(radius), 2)
+        self.surface.blit(overlay, (0, 0))
+
+    # ------------------------------------------------------------------ stat cards
+    def _draw_stat_cards(self, stats, y_top):
+        """2 rows x 3 columns of labelled stat cards."""
+        cards = [
+            ('Peak Size',  f"{stats['max_length']} seg"),
+            ('Apples',     str(stats['apples'])),
+            ('Distance',   f"{stats['distance']} cells"),
+            ('Power-ups',  str(stats['magic_apples'])),
+            ('Survived',   f"{stats['time_ticks'] // 10}s"),
+            ('Max Level',  str(stats['max_level'])),
+        ]
+        cols           = 3
+        card_w, card_h = 172, 36
+        gap_x, gap_y   = 12, 8
+        total_w = cols * card_w + (cols - 1) * gap_x
+        start_x = (C.SCREEN_WIDTH - total_w) // 2
+
+        for i, (label, value) in enumerate(cards):
+            col = i % cols
+            row = i // cols
+            x = start_x + col * (card_w + gap_x)
+            y = y_top   + row * (card_h + gap_y)
+            rect = pygame.Rect(x, y, card_w, card_h)
+
+            bg = self._alpha_surface(card_w, card_h, (18, 18, 48, 190))
+            self.surface.blit(bg, rect)
+            pygame.draw.rect(self.surface, C.PANEL_BORDER_COLOR, rect, 1)
+
+            lsurf = self.prompt_font.render(label, True, C.TEXT_DIM_COLOR)
+            self.surface.blit(lsurf, lsurf.get_rect(midleft=(rect.x + 10, rect.centery)))
+
+            vsurf = self.hs_entry_font.render(value, True, C.TEXT_COLOR)
+            self.surface.blit(vsurf, vsurf.get_rect(midright=(rect.right - 10, rect.centery)))
+
+    # ------------------------------------------------------------------ HS section
+    def _draw_hs_section(self, high_scores, highlight_pos, y_title):
+        """High-score list with title, medal colours, new-entry highlight."""
+        cx = C.SCREEN_WIDTH // 2
+        self._shadow_text(self.hs_title_font, 'HIGH  SCORES', C.HS_RANK_GOLD, (cx, y_title))
+        medal   = [C.HS_RANK_GOLD, C.HS_RANK_SILVER, C.HS_RANK_BRONZE]
+        entry_y = y_title + 26
+        row_h   = 28
+
+        for i, (name, hs_score) in enumerate(high_scores):
+            if i == highlight_pos:
+                color   = C.HS_HIGHLIGHT
+                row_bg  = self._alpha_surface(524, row_h - 2, (80, 80, 0, 100))
+                self.surface.blit(row_bg, (38, entry_y + i * row_h - row_h // 2 + 1))
+            elif i < 3:
+                color = medal[i]
+            else:
+                color = C.TEXT_DIM_COLOR
+
+            rank_s  = self.hs_entry_font.render(f'{i + 1}.', True, color)
+            name_s  = self.hs_entry_font.render(name,         True, color)
+            score_s = self.hs_entry_font.render(str(hs_score), True, color)
+            row_y   = entry_y + i * row_h
+            self.surface.blit(rank_s,  rank_s.get_rect(midright=(cx - 140, row_y)))
+            self.surface.blit(name_s,  name_s.get_rect(midleft=(cx - 128, row_y)))
+            self.surface.blit(score_s, score_s.get_rect(midright=(cx + 172, row_y)))
+
+    # ------------------------------------------------------------------ restart buttons
+    def _draw_restart_buttons(self, tick):
+        """Two styled keyboard-hint buttons that pulse to signal interactivity."""
+        pulse   = int(160 + 80 * math.sin(tick * 0.15))   # 80-240
+        cy      = 492
+        btn_h   = 36
+        btn_w   = 170
+
+        # ENTER – Restart
+        er = pygame.Rect(C.SCREEN_WIDTH // 2 - btn_w - 16, cy - btn_h // 2, btn_w, btn_h)
+        self._panel(er, (0, 30, 0, 200))
+        pygame.draw.rect(self.surface, (0, pulse, 0), er, 2)
+        es = self.prompt_font.render('ENTER   Restart', True, (80, pulse, 80))
+        self.surface.blit(es, es.get_rect(center=er.center))
+
+        # ESC – Quit
+        qr = pygame.Rect(C.SCREEN_WIDTH // 2 + 16, cy - btn_h // 2, btn_w, btn_h)
+        self._panel(qr, (30, 0, 0, 200))
+        pygame.draw.rect(self.surface, (pulse // 2, 0, 0), qr, 2)
+        qs = self.prompt_font.render('ESC   Quit', True, (pulse // 2 + 60, 60, 60))
+        self.surface.blit(qs, qs.get_rect(center=qr.center))
+
+    # ------------------------------------------------------------------ full death screen
+    def draw_death_screen(self, score, stats, high_scores, highlight_pos=-1, tick=0):
+        """Complete animated death screen: ripple grid + panel + stats + leaderboard."""
+        cx = C.SCREEN_WIDTH // 2
+
+        # 1. Animated grid background
+        self._draw_ripple_grid()
+
+        # 2. Main translucent panel
+        panel = pygame.Rect(18, 14, 564, 454)
+        self._panel(panel, (8, 8, 22, 235), C.PANEL_BORDER_COLOR)
+
+        # 3. "GAME  OVER" title
+        self._shadow_text(self.title_font, 'GAME  OVER', C.GAMEOVER_TITLE_COLOR, (cx, 60))
+
+        # 4. Score
+        self._shadow_text(self.score_font, f'Score   {score}', C.GAMEOVER_SCORE_COLOR, (cx, 108))
+
+        # 5. Thin divider
+        pygame.draw.line(self.surface, C.PANEL_BORDER_COLOR, (38, 130), (562, 130), 1)
+
+        # 6. Stat cards (2 x 3)
+        self._draw_stat_cards(stats, y_top=138)
+
+        # 7. Thin divider
+        pygame.draw.line(self.surface, C.PANEL_BORDER_COLOR, (38, 222), (562, 222), 1)
+
+        # 8. High-score section
+        self._draw_hs_section(high_scores, highlight_pos, y_title=242)
+
+        # 9. Pulsing restart/quit buttons (below panel)
+        self._draw_restart_buttons(tick)
 
     def update(self):
         pygame.display.update()
