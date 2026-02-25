@@ -529,3 +529,55 @@ class ParticleEffect:
             
         for particle in self.particles:
             particle.draw(surface)
+
+
+class BuffAnnouncement:
+    """Animated text pop-up that appears when a magic apple buff activates.
+    Scales up with a pop, then fades out while staying semi-transparent so the
+    game field remains visible underneath."""
+
+    LIFESPAN = 32   # ticks the announcement lives
+
+    def __init__(self, label, color):
+        self.tick    = 0
+        self.angle   = -9          # slight counter-clockwise tilt (degrees)
+        try:
+            font = pygame.font.SysFont('Arial', 54, bold=True)
+        except pygame.error:
+            font = pygame.font.Font(None, 60)
+        self.base_surf = font.render(label, True, color)
+
+    def update(self):
+        self.tick += 1
+        return self.tick < self.LIFESPAN
+
+    def draw(self, surface):
+        t = self.tick / self.LIFESPAN          # 0.0 → 1.0
+
+        # ---- scale: pop to 1.3×, then settle to 1.0 ----
+        if t < 0.20:
+            scale = (t / 0.20) * 1.3
+        elif t < 0.38:
+            scale = 1.3 - ((t - 0.20) / 0.18) * 0.3
+        else:
+            scale = 1.0
+
+        # ---- alpha: quick fade-in, hold, then fade out at the end ----
+        # Max alpha kept low (175) so the game field is still visible.
+        if t < 0.08:
+            alpha = int((t / 0.08) * 175)
+        elif t < 0.62:
+            alpha = 175
+        else:
+            alpha = int(((1.0 - t) / 0.38) * 175)
+        alpha = max(0, min(255, alpha))
+
+        # ---- scale + rotate ----
+        w = max(1, int(self.base_surf.get_width()  * scale))
+        h = max(1, int(self.base_surf.get_height() * scale))
+        scaled  = pygame.transform.smoothscale(self.base_surf, (w, h))
+        rotated = pygame.transform.rotate(scaled, self.angle)
+        rotated.set_alpha(alpha)
+
+        cx, cy = C.SCREEN_WIDTH // 2, C.SCREEN_HEIGHT // 2
+        surface.blit(rotated, rotated.get_rect(center=(cx, cy)))

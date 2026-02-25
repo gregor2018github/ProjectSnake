@@ -8,7 +8,7 @@ from time import sleep
 import constants as C
 import high_scores as hs
 import magic_apple_logic as mal
-from game_objects import Snake, Apple, MagicApple, Obstacle, MovingObstacle, ParticleEffect, OrthogonalMovingObstacle
+from game_objects import Snake, Apple, MagicApple, Obstacle, MovingObstacle, ParticleEffect, OrthogonalMovingObstacle, BuffAnnouncement
 from screen import Screen
 
 class Game:
@@ -337,6 +337,9 @@ class Game:
                     fn(self)
                 self.magic_apples_eaten += 1
                 self.magic_apples.remove(magic_apple)
+                label, color = C.BUFF_DISPLAY_NAMES.get(
+                    magic_apple.type, (magic_apple.type, C.TEXT_COLOR))
+                self.buff_announcements.append(BuffAnnouncement(label, color))
                 break
 
         # Snake hitting static obstacles (bypassed during ghost_mode)
@@ -365,6 +368,13 @@ class Game:
             self.screen.draw_element(obstacle)
         for moving_obstacle in self.moving_obstacles:
             self.screen.draw_element(moving_obstacle)
+
+        active = []
+        for ann in self.buff_announcements:
+            if ann.update():
+                ann.draw(self.screen.surface)
+                active.append(ann)
+        self.buff_announcements = active
 
         self.screen.draw_score_and_level(self.score, self.level)
         self.screen.draw_buffs(self.active_buffs)
@@ -552,6 +562,7 @@ class Game:
         self.moving_obstacles = []
         self.magic_apples = []
         self.particle_effects = []
+        self.buff_announcements = []
         self.apple = self._create_initial_apple()
         self.score = 0
         self.apples_eaten = 0

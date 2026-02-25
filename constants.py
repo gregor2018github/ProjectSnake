@@ -76,6 +76,7 @@ BUFF_DISPLAY_NAMES = {
     'double_score':        ('x2 Score',(255, 200,   0)),
     'freeze_obstacles':    ('Freeze',  (160, 230, 255)),
     'shield':              ('Shield',  (100, 180, 255)),
+    'shrink':              ('Shrink!', (200, 100, 255)),
 }
 
 # Obstacle Constants
