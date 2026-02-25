@@ -26,3 +26,27 @@ def ghost_mode(game):
 def no_grow(game):
     """Eating normal apples does not grow the snake for a limited time."""
     game.active_buffs['no_grow'] = C.BUFF_DURATION_NO_GROW
+
+
+def double_score(game):
+    """Each normal apple grants 2 points instead of 1 for a limited time."""
+    game.active_buffs['double_score'] = C.BUFF_DURATION_DOUBLE_SCORE
+
+
+def freeze_obstacles(game):
+    """All moving obstacles stop moving for a limited time."""
+    game.active_buffs['freeze_obstacles'] = C.BUFF_DURATION_FREEZE
+
+
+def shrink(game):
+    """Instantly halve the snake's length (minimum: starting length).
+    Useful for escaping tight spots."""
+    target = max(C.SNAKE_START_LENGTH, len(game.snake.positions) // 2)
+    game.snake.positions = game.snake.positions[:target]
+    game.snake.length = target
+
+
+def shield(game):
+    """Absorb up to SHIELD_HITS obstacle collisions without dying.
+    The HUD counter shows remaining charges."""
+    game.active_buffs['shield'] = C.SHIELD_HITS

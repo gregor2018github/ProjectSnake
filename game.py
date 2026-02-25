@@ -199,9 +199,10 @@ class Game:
             else:
                 self.removing_diagonal_obstacles = False
                 
-        # Update moving obstacles
-        for moving_obstacle in self.moving_obstacles:
-            moving_obstacle.update(self.snake, self.obstacles)
+        # Update moving obstacles (frozen during freeze_obstacles buff)
+        if 'freeze_obstacles' not in self.active_buffs:
+            for moving_obstacle in self.moving_obstacles:
+                moving_obstacle.update(self.snake, self.obstacles)
 
         # Update magical apples
         for magic_apple in list(self.magic_apples):
@@ -237,12 +238,17 @@ class Game:
                     self.next_direction = new_dir
 
     def _tick_active_buffs(self):
-        """Decrement all active buff timers; restore speed when speed buffs expire."""
-        expired = [k for k, v in self.active_buffs.items() if v <= 1]
+        """Decrement all active buff timers; restore speed when speed buffs expire.
+        'shield' is charge-based, not time-based – it is never decremented here."""
+        expired = [k for k, v in self.active_buffs.items() if k != 'shield' and v <= 1]
         for key in expired:
             if key in ('increase_tick_speed', 'decrease_tick_speed'):
                 self.game_speed = self.base_speed
-        self.active_buffs = {k: v - 1 for k, v in self.active_buffs.items() if v > 1}
+        self.active_buffs = {
+            k: (v if k == 'shield' else v - 1)
+            for k, v in self.active_buffs.items()
+            if k == 'shield' or v > 1
+        }
 
     def update_game_state(self):
         """ Updates the position of the snake. """
@@ -263,8 +269,12 @@ class Game:
         # Tick buff timers
         self._tick_active_buffs()
 
-        # Track time alive
+        # Track time alive and movement stats
         self.time_alive += 1
+        self.distance_traveled += 1
+        current_len = len(self.snake.positions)
+        if current_len > self.max_snake_length:
+            self.max_snake_length = current_len
 
         # Check if player advances to next level
         self._check_for_level_up()
@@ -275,11 +285,24 @@ class Game:
         # Update particle effects and remove finished ones
         self.particle_effects = [effect for effect in self.particle_effects if effect.update()]
 
+    def _apply_obstacle_death(self):
+        """Handle an obstacle collision: absorb one shield charge or die."""
+        if 'shield' in self.active_buffs:
+            self.active_buffs['shield'] -= 1
+            if self.active_buffs['shield'] == 0:
+                del self.active_buffs['shield']
+            if self.bite_obstacle_sound:
+                self.bite_obstacle_sound.play()
+            return  # hit absorbed – snake survives
+        if self.bite_obstacle_sound:
+            self.bite_obstacle_sound.play()
+        self.game_over()
+
     def check_collisions(self):
         """ Checks for collisions between game objects. """
         # Snake eating apple
         if self.snake.collides_with_rect(self.apple.rect):
-            self.score += 1
+            self.score += 2 if 'double_score' in self.active_buffs else 1
             self.apples_eaten += 1
             if 'no_grow' not in self.active_buffs:
                 self.snake.grow()
@@ -312,23 +335,21 @@ class Game:
                 fn = getattr(mal, magic_apple.type, None)
                 if fn:
                     fn(self)
+                self.magic_apples_eaten += 1
                 self.magic_apples.remove(magic_apple)
                 break
 
         # Snake hitting static obstacles (bypassed during ghost_mode)
         if 'ghost_mode' not in self.active_buffs:
             if self.snake.collides_with_obstacles(self.obstacles):
-                if self.bite_obstacle_sound:
-                    self.bite_obstacle_sound.play()
-                self.game_over()
+                self._apply_obstacle_death()
 
         # Snake head hitting moving obstacles (bypassed during ghost_mode)
-        if 'ghost_mode' not in self.active_buffs:
+        if 'ghost_mode' not in self.active_buffs and self.running:
             for moving_obstacle in self.moving_obstacles:
                 if moving_obstacle.collides_with_snake_head(self.snake):
-                    if self.bite_obstacle_sound:
-                        self.bite_obstacle_sound.play()
-                    self.game_over()
+                    self._apply_obstacle_death()
+                    break
 
     def draw(self):
         """ Draws all game elements onto the screen. """
@@ -487,29 +508,38 @@ class Game:
             # Reload high scores after saving to ensure the list displayed is current
             self.high_scores = hs.load_high_scores()
 
-        # Display final game over screen with scores and restart prompt
-        self.screen.clear()
-        self.screen.draw_overlay()
-        self.screen.draw_game_over_message(self.score)
-        self.screen.draw_run_stats(self.apples_eaten, self.time_alive, self.max_level_reached)
-        self.screen.draw_high_score_list(self.high_scores, highlight_pos=insert_pos)
-        self.screen.show_restart_prompt()
-        self.screen.update()
+        # Build stats dict for the death screen
+        stats = {
+            'apples':       self.apples_eaten,
+            'time_ticks':   self.time_alive,
+            'max_level':    self.max_level_reached,
+            'max_length':   self.max_snake_length,
+            'distance':     self.distance_traveled,
+            'magic_apples': self.magic_apples_eaten,
+        }
 
-        # Wait for player input to restart or quit
+        # Animated game-over screen – redraws each tick so waves animate
+        self.screen.reset_waves()
         waiting_for_input = True
+        anim_tick = 0
         while waiting_for_input and self.running:
-            self.clock.tick(15) # Lower tick rate for game over screen
+            self.clock.tick(20)
+            anim_tick += 1
+            self.screen.tick_waves()
+            self.screen.draw_death_screen(
+                self.score, stats, self.high_scores,
+                highlight_pos=insert_pos, tick=anim_tick
+            )
+            self.screen.update()
             for event in pygame.event.get():
                 if event.type == QUIT:
                     self.running = False
                     waiting_for_input = False
                 elif event.type == KEYDOWN:
                     if event.key == K_ESCAPE:
-                        self.running = False # Quit on ESC
+                        self.running = False
                     elif event.key == K_RETURN:
-                    # Enter restarts the game
-                        waiting_for_input = False # Exit loop to restart or quit
+                        waiting_for_input = False
 
         # If the game is still running (i.e., didn't quit), reset for a new game
         if self.running:
@@ -526,6 +556,9 @@ class Game:
         self.score = 0
         self.apples_eaten = 0
         self.time_alive = 0
+        self.max_snake_length = C.SNAKE_START_LENGTH
+        self.distance_traveled = 0
+        self.magic_apples_eaten = 0
         self.level = 1
         self.max_level_reached = 1
         self.frame_counter = 0

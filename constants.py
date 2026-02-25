@@ -51,7 +51,10 @@ APPLE_SIZE = (GRID_SIZE, GRID_SIZE)
 
 MAGIC_APPLE_COLOR = (255, 215, 0)  # Gold
 MAGIC_APPLE_SIZE = (GRID_SIZE, GRID_SIZE)
-MAGIC_APPLE_TYPES = ["increase_tick_speed", "decrease_tick_speed", "ghost_mode", "no_grow"]
+MAGIC_APPLE_TYPES = [
+    "increase_tick_speed", "decrease_tick_speed", "ghost_mode", "no_grow",
+    "double_score", "freeze_obstacles", "shrink", "shield",
+]
 MAGIC_APPLE_SPAWN_PROBABILITY = 0.1  # Probability of spawning a magic apple when eating a normal apple
 MAGIC_APPLE_LIFESPAN = 50  # Lifespan in ticks
 
@@ -60,13 +63,19 @@ BUFF_DURATION_SPEED_UP = 120
 BUFF_DURATION_SPEED_DOWN = 120
 BUFF_DURATION_GHOST = 100
 BUFF_DURATION_NO_GROW = 80
+BUFF_DURATION_DOUBLE_SCORE = 100
+BUFF_DURATION_FREEZE = 70
+SHIELD_HITS = 3             # obstacle hits the shield absorbs before breaking
 
 # Buff HUD display info: buff_key -> (label, RGB color)
 BUFF_DISPLAY_NAMES = {
-    'increase_tick_speed': ('Speed+', (80, 220, 80)),
-    'decrease_tick_speed': ('Slow',   (220, 80,  80)),
-    'ghost_mode':          ('Ghost',  (120, 180, 255)),
-    'no_grow':             ('No Grow',(80,  220, 80)),
+    'increase_tick_speed': ('Speed+',  (80,  220,  80)),
+    'decrease_tick_speed': ('Slow',    (220,  80,  80)),
+    'ghost_mode':          ('Ghost',   (120, 180, 255)),
+    'no_grow':             ('No Grow', ( 80, 220,  80)),
+    'double_score':        ('x2 Score',(255, 200,   0)),
+    'freeze_obstacles':    ('Freeze',  (160, 230, 255)),
+    'shield':              ('Shield',  (100, 180, 255)),
 }
 
 # Obstacle Constants
@@ -97,6 +106,11 @@ MAGIC_APPLE_EAT_SOUND_FILE = get_sound_file_path(SOUND_FOLDER, "magic-apple-eat.
 BITE_SELF_SOUND_FILE = get_sound_file_path(SOUND_FOLDER, "bite-self.wav")
 BITE_OBSTACLE_SOUND_FILE = get_sound_file_path(SOUND_FOLDER, "bite-obstacle.wav")
 REMOVE_OBSTACLE_SOUND_FILE = get_sound_file_path(SOUND_FOLDER, "remove-obstacle.wav")
+
+# Death-screen wave animation
+WAVE_SPAWN_INTERVAL = 70    # frames between new ripple waves
+WAVE_SPEED = 7              # pixels the wave radius grows per frame
+WAVE_MAX_RADIUS = 900       # radius at which a wave is discarded
 
 # UI and Display Constants
 BACKGROUND_COLOR = (0, 0, 0)
