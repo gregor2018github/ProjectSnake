@@ -8,145 +8,235 @@ class Screen:
         self.height = height
         self.surface = pygame.display.set_mode((width, height))
         pygame.display.set_caption(caption)
-        # Initialize fonts - consider error handling if font not found
         try:
-            self.font = pygame.font.SysFont('Arial', 25)
-            self.game_over_font = pygame.font.SysFont('Arial', 40)
-            self.high_score_font = pygame.font.SysFont('Arial', 20)
-            self.input_font = pygame.font.SysFont('Arial', 25)
-            self.prompt_font = pygame.font.SysFont('Arial', 20)
-        except pygame.error as e:
-            print(f"Warning: Font loading error - {e}. Using default font.")
-            # Fallback to default font
-            self.font = pygame.font.Font(None, 30)
-            self.game_over_font = pygame.font.Font(None, 50)
-            self.high_score_font = pygame.font.Font(None, 25)
-            self.input_font = pygame.font.Font(None, 30)
-            self.prompt_font = pygame.font.Font(None, 25)
+            self.font           = pygame.font.SysFont('Arial', 22, bold=True)
+            self.font_regular   = pygame.font.SysFont('Arial', 22)
+            self.title_font     = pygame.font.SysFont('Arial', 52, bold=True)
+            self.score_font     = pygame.font.SysFont('Arial', 28, bold=True)
+            self.hs_title_font  = pygame.font.SysFont('Arial', 22, bold=True)
+            self.hs_entry_font  = pygame.font.SysFont('Arial', 19)
+            self.input_font     = pygame.font.SysFont('Arial', 22)
+            self.prompt_font    = pygame.font.SysFont('Arial', 18)
+            self.buff_font      = pygame.font.SysFont('Arial', 17, bold=True)
+            self.hud_font       = pygame.font.SysFont('Arial', 22, bold=True)
+        except pygame.error:
+            self.font           = pygame.font.Font(None, 28)
+            self.font_regular   = pygame.font.Font(None, 28)
+            self.title_font     = pygame.font.Font(None, 64)
+            self.score_font     = pygame.font.Font(None, 34)
+            self.hs_title_font  = pygame.font.Font(None, 28)
+            self.hs_entry_font  = pygame.font.Font(None, 24)
+            self.input_font     = pygame.font.Font(None, 28)
+            self.prompt_font    = pygame.font.Font(None, 23)
+            self.buff_font      = pygame.font.Font(None, 22)
+            self.hud_font       = pygame.font.Font(None, 28)
+        # Keep old names so legacy call sites (pause, death animation) still work
+        self.game_over_font   = self.title_font
+        self.high_score_font  = self.hs_entry_font
 
+    # ------------------------------------------------------------------ helpers
+    def _alpha_surface(self, w, h, color_rgba):
+        """Return a pre-filled SRCALPHA surface."""
+        s = pygame.Surface((w, h), pygame.SRCALPHA)
+        s.fill(color_rgba)
+        return s
+
+    def _panel(self, rect, color_rgba=None, border_color=None):
+        """Draw a rounded-corner-style panel (dark fill + optional 1 px border)."""
+        if color_rgba is None:
+            color_rgba = C.PANEL_BG_RGBA
+        s = self._alpha_surface(rect.width, rect.height, color_rgba)
+        self.surface.blit(s, rect)
+        if border_color:
+            pygame.draw.rect(self.surface, border_color, rect, 1)
+
+    def _shadow_text(self, font, text, color, center, offset=2):
+        """Render text with a drop shadow."""
+        shadow = font.render(text, True, (0, 0, 0))
+        surf   = font.render(text, True, color)
+        sr = shadow.get_rect(center=(center[0] + offset, center[1] + offset))
+        tr = surf.get_rect(center=center)
+        self.surface.blit(shadow, sr)
+        self.surface.blit(surf, tr)
+
+    def _draw_hud_bar(self, rect):
+        """Semi-transparent bar behind HUD text."""
+        pad_x, pad_y = 8, 4
+        s = self._alpha_surface(rect.width + pad_x * 2, rect.height + pad_y * 2, (0, 0, 0, 160))
+        self.surface.blit(s, (rect.x - pad_x, rect.y - pad_y))
+
+    # ------------------------------------------------------------------ gameplay HUD
     def clear(self):
         self.surface.fill(C.BACKGROUND_COLOR)
-        # Subtle grid overlay
         for x in range(0, C.SCREEN_WIDTH, C.GRID_SIZE):
             pygame.draw.line(self.surface, C.GRID_LINE_COLOR, (x, 0), (x, C.SCREEN_HEIGHT))
         for y in range(0, C.SCREEN_HEIGHT, C.GRID_SIZE):
             pygame.draw.line(self.surface, C.GRID_LINE_COLOR, (0, y), (C.SCREEN_WIDTH, y))
 
     def draw_element(self, element):
-        # Assumes element has a 'draw' method that takes the surface
         element.draw(self.surface)
 
-    def _draw_hud_bar(self, rect):
-        """Draw a semi-transparent dark bar behind HUD text."""
-        pad_x, pad_y = 8, 4
-        s = pygame.Surface((rect.width + pad_x * 2, rect.height + pad_y * 2), pygame.SRCALPHA)
-        s.fill((0, 0, 0, 160))
-        self.surface.blit(s, (rect.x - pad_x, rect.y - pad_y))
-
     def draw_score_and_level(self, score, level):
-        """Draws score and level on a single semi-transparent HUD bar."""
-        score_surf = self.font.render(f'Score: {score}', True, C.TEXT_COLOR)
-        level_surf = self.font.render(f'Level: {level}', True, C.TEXT_COLOR)
+        """Score + level on a single semi-transparent HUD bar."""
+        score_surf = self.hud_font.render(f'Score: {score}', True, C.TEXT_COLOR)
+        level_surf = self.hud_font.render(f'Level: {level}', True, C.TEXT_COLOR)
         score_rect = score_surf.get_rect(topleft=C.SCORE_POS)
         level_rect = level_surf.get_rect(topleft=(C.SCORE_POS[0] + 150, C.SCORE_POS[1]))
-        # One bar spanning both labels
-        combined = score_rect.union(level_rect)
-        self._draw_hud_bar(combined)
+        self._draw_hud_bar(score_rect.union(level_rect))
         self.surface.blit(score_surf, score_rect)
         self.surface.blit(level_surf, level_rect)
 
-    # Keep legacy methods for backward compatibility with other call sites (e.g. pause screen)
-    def draw_score(self, score):
-        score_text = self.font.render(f'Score: {score}', True, C.TEXT_COLOR)
-        self.surface.blit(score_text, C.SCORE_POS)
-
-    def draw_level(self, level):
-        level_text = self.font.render(f'Level: {level}', True, C.TEXT_COLOR)
-        self.surface.blit(level_text, (C.SCORE_POS[0] + 150, C.SCORE_POS[1]))
-
-    def draw_game_over_message(self, score):
-        """Draws only the 'Game Over! Score: X' message."""
-        game_over_text = self.game_over_font.render(f'Game Over! Score: {score}', True, C.TEXT_COLOR)
-        # Adjust vertical position slightly if needed, maybe higher to accommodate input box later
-        text_rect = game_over_text.get_rect(center=(C.GAME_OVER_POS[0], C.GAME_OVER_POS[1] - 130))
-        self.surface.blit(game_over_text, text_rect)
-
-    def draw_message_at_x_y(self: object, message: str, x: int, y: int, size: int) -> None:
-        """Draws a message at a specific (x, y) position on the screen."""
-        font = pygame.font.SysFont('Arial', size)
-        text_surface = font.render(message, True, C.TEXT_COLOR)
-        text_rect = text_surface.get_rect(center=(x, y))
-        self.surface.blit(text_surface, text_rect)
-
-    def draw_bottom_message(self: object, message: str, size: int) -> None:
-        """Draws a message at the bottom of the screen."""
-        font = pygame.font.SysFont('Arial', size)
-        bottom_text = font.render(message, True, C.TEXT_COLOR)
-        text_rect = bottom_text.get_rect(center=(C.SCREEN_WIDTH // 2, C.SCREEN_HEIGHT - 40))
-        self.surface.blit(bottom_text, text_rect)
-
-    def draw_high_score_list(self, high_scores):
-        """Draws only the high score list."""
-        # High Scores title
-        hs_title_text = self.font.render('High Scores:', True, C.TEXT_COLOR)
-        # Position relative to the center or the game over message position
-        hs_title_rect = hs_title_text.get_rect(center=(C.GAME_OVER_POS[0], C.GAME_OVER_POS[1] - 50)) # Adjusted position
-        self.surface.blit(hs_title_text, hs_title_rect)
-
-        # Display high score entries
-        start_y = hs_title_rect.bottom + 15 # Adjusted spacing
-        for i, (name, hs_score) in enumerate(high_scores):
-            entry_text = self.high_score_font.render(f"{i+1}. {name} - {hs_score}", True, C.TEXT_COLOR)
-            entry_rect = entry_text.get_rect(center=(C.GAME_OVER_POS[0], start_y + i * 25))
-            self.surface.blit(entry_text, entry_rect)
-
-    def draw_text_input(self, prompt, current_text, active):
-        # Draw prompt above the input box
-        prompt_surf = self.prompt_font.render(prompt, True, C.TEXT_COLOR)
-        # Adjust prompt position based on new game over message position if needed
-        prompt_rect = prompt_surf.get_rect(center=C.INPUT_PROMPT_POS)
-        self.surface.blit(prompt_surf, prompt_rect)
-
-        # Draw the input box border
-        box_color = C.INPUT_BOX_COLOR_ACTIVE if active else C.INPUT_BOX_COLOR_INACTIVE
-        pygame.draw.rect(self.surface, box_color, C.INPUT_BOX_RECT, 2) # Draw border only
-
-        # Draw the text entered by the user inside the box
-        text_surface = self.input_font.render(current_text, True, C.TEXT_COLOR)
-        # Position text slightly inside the box
-        text_rect = text_surface.get_rect(midleft=(C.INPUT_BOX_RECT.x + 5, C.INPUT_BOX_RECT.centery))
-        # Ensure text doesn't overflow the box visually (optional clipping)
-        # pygame.draw.rect(self.surface, C.BACKGROUND_COLOR, C.INPUT_BOX_RECT) # Clear inside box first if needed
-        self.surface.blit(text_surface, text_rect)
-
-    def show_restart_prompt(self):
-        prompt_text = self.prompt_font.render("Press ENTER to restart (ESC to quit)", True, C.TEXT_COLOR)
-        prompt_rect = prompt_text.get_rect(center=C.RESTART_PROMPT_POS)
-        self.surface.blit(prompt_text, prompt_rect)
-
     def draw_buffs(self, active_buffs):
-        """Draws active buff pills in the top-right corner."""
+        """Active buff pills in the top-right corner with a coloured background."""
         if not active_buffs:
             return
         x_right = self.width - 8
         y = 10
         for buff_key, ticks_left in active_buffs.items():
             label, color = C.BUFF_DISPLAY_NAMES.get(buff_key, (buff_key, C.TEXT_COLOR))
-            text = self.high_score_font.render(f"{label} ({ticks_left})", True, color)
+            text = self.buff_font.render(f'{label}  {ticks_left}', True, color)
             text_rect = text.get_rect(topright=(x_right, y))
+            # Coloured pill background
+            r, g, b = color
+            pill = self._alpha_surface(text_rect.width + 14, text_rect.height + 6,
+                                       (r // 5, g // 5, b // 5, 200))
+            self.surface.blit(pill, (text_rect.x - 7, text_rect.y - 3))
+            pygame.draw.rect(self.surface, (r // 2, g // 2, b // 2),
+                             pygame.Rect(text_rect.x - 7, text_rect.y - 3,
+                                         text_rect.width + 14, text_rect.height + 6), 1)
             self.surface.blit(text, text_rect)
-            y += text_rect.height + 4
+            y += text_rect.height + 10
+
+    # Legacy single-method call sites (pause screen etc.)
+    def draw_score(self, score):
+        self.surface.blit(self.hud_font.render(f'Score: {score}', True, C.TEXT_COLOR), C.SCORE_POS)
+
+    def draw_level(self, level):
+        self.surface.blit(self.hud_font.render(f'Level: {level}', True, C.TEXT_COLOR),
+                          (C.SCORE_POS[0] + 150, C.SCORE_POS[1]))
+
+    # ------------------------------------------------------------------ overlay
+    def draw_overlay(self, alpha=175):
+        """Dim the current frame with a dark transparent layer."""
+        s = self._alpha_surface(self.width, self.height, (0, 0, 0, alpha))
+        self.surface.blit(s, (0, 0))
+
+    # ------------------------------------------------------------------ death / game-over screens
+    def draw_game_over_message(self, score):
+        """'Game Over!' (bold red) + 'Score: X' (amber) centred on screen."""
+        cx = C.GAME_OVER_POS[0]
+        self._shadow_text(self.title_font, 'Game Over!',
+                          C.GAMEOVER_TITLE_COLOR, (cx, C.GAME_OVER_POS[1] - 152))
+        self._shadow_text(self.score_font, f'Score:  {score}',
+                          C.GAMEOVER_SCORE_COLOR, (cx, C.GAME_OVER_POS[1] - 108))
 
     def draw_run_stats(self, apples_eaten, time_ticks, max_level):
-        """Draws per-run stats (apples, time, max level) on the death screen."""
-        seconds = time_ticks // 10  # game runs at SNAKE_SPEED_INITIAL ticks/sec
-        stats_text = (
-            f"Apples: {apples_eaten}   |   "
-            f"Time: {seconds}s   |   "
-            f"Max Level: {max_level}"
+        """Per-run stats bar between the score and the high-score list."""
+        seconds = time_ticks // 10
+        parts = [
+            (f'\u25b6  {apples_eaten} apples', C.TEXT_COLOR),
+            ('|', C.PROMPT_COLOR),
+            (f'\u23f1  {seconds}s', C.TEXT_COLOR),
+            ('|', C.PROMPT_COLOR),
+            (f'\u2605  level {max_level}', C.TEXT_COLOR),
+        ]
+        gap = 10
+        surfaces = [self.prompt_font.render(t, True, c) for t, c in parts]
+        total_w = sum(s.get_width() for s in surfaces) + gap * (len(surfaces) - 1)
+        x = C.GAME_OVER_POS[0] - total_w // 2
+        y_center = C.GAME_OVER_POS[1] - 75
+        # background pill
+        h = max(s.get_height() for s in surfaces)
+        pill = self._alpha_surface(total_w + 20, h + 8, (30, 30, 30, 180))
+        self.surface.blit(pill, (x - 10, y_center - h // 2 - 4))
+        for surf in surfaces:
+            r = surf.get_rect(midleft=(x, y_center))
+            self.surface.blit(surf, r)
+            x += surf.get_width() + gap
+
+    def draw_high_score_list(self, high_scores, highlight_pos=-1):
+        """High-score list with a panel, medal colours, and optional new-entry highlight."""
+        cx = C.GAME_OVER_POS[0]
+        title_y  = C.GAME_OVER_POS[1] - 44
+        entry_y0 = C.GAME_OVER_POS[1] - 14
+        row_h    = 26
+        panel_pad = 12
+        panel_rect = pygame.Rect(
+            cx - 170,
+            title_y - panel_pad - 6,
+            340,
+            panel_pad * 2 + 30 + len(high_scores) * row_h + 6
         )
-        surf = self.high_score_font.render(stats_text, True, (180, 180, 180))
-        rect = surf.get_rect(center=(self.width // 2, C.GAME_OVER_POS[1] - 90))
+        self._panel(panel_rect, border_color=C.PANEL_BORDER_COLOR)
+
+        # Title
+        self._shadow_text(self.hs_title_font, 'High Scores',
+                          C.HS_RANK_GOLD, (cx, title_y))
+
+        # Rank medal colours
+        medal = [C.HS_RANK_GOLD, C.HS_RANK_SILVER, C.HS_RANK_BRONZE]
+
+        for i, (name, hs_score) in enumerate(high_scores):
+            if i == highlight_pos:
+                color = C.HS_HIGHLIGHT
+                # Highlight row background
+                row_bg = self._alpha_surface(panel_rect.width - 4, row_h - 2, (80, 80, 0, 120))
+                self.surface.blit(row_bg, (panel_rect.x + 2, entry_y0 + i * row_h - row_h // 2))
+            elif i < 3:
+                color = medal[i]
+            else:
+                color = C.TEXT_DIM_COLOR
+
+            rank_surf  = self.hs_entry_font.render(f'{i + 1}.', True, color)
+            name_surf  = self.hs_entry_font.render(name, True, color)
+            score_surf = self.hs_entry_font.render(str(hs_score), True, color)
+
+            row_y = entry_y0 + i * row_h
+            self.surface.blit(rank_surf,  rank_surf.get_rect(midright=(cx - 110, row_y)))
+            self.surface.blit(name_surf,  name_surf.get_rect(midleft=(cx - 100, row_y)))
+            self.surface.blit(score_surf, score_surf.get_rect(midright=(cx + 155, row_y)))
+
+    def show_restart_prompt(self):
+        text = 'ENTER  restart     ESC  quit'
+        surf = self.prompt_font.render(text, True, C.PROMPT_COLOR)
+        rect = surf.get_rect(center=C.RESTART_PROMPT_POS)
+        pill = self._alpha_surface(rect.width + 20, rect.height + 8, (0, 0, 0, 140))
+        self.surface.blit(pill, (rect.x - 10, rect.y - 4))
+        self.surface.blit(surf, rect)
+
+    def draw_text_input(self, prompt, current_text, active):
+        """Name-entry input box with a dark fill and accent border."""
+        # Prompt label
+        prompt_surf = self.prompt_font.render(prompt, True, C.TEXT_DIM_COLOR)
+        self.surface.blit(prompt_surf, prompt_surf.get_rect(center=C.INPUT_PROMPT_POS))
+
+        # Box background
+        box_fill = self._alpha_surface(C.INPUT_BOX_RECT.width, C.INPUT_BOX_RECT.height,
+                                       (20, 20, 20, 220))
+        self.surface.blit(box_fill, C.INPUT_BOX_RECT)
+
+        # Border – accent colour when active
+        border_color = (100, 160, 255) if active else (80, 80, 80)
+        pygame.draw.rect(self.surface, border_color, C.INPUT_BOX_RECT, 2)
+
+        # Typed text
+        text_surf = self.input_font.render(current_text, True, C.TEXT_COLOR)
+        self.surface.blit(text_surf,
+                          text_surf.get_rect(midleft=(C.INPUT_BOX_RECT.x + 8,
+                                                       C.INPUT_BOX_RECT.centery)))
+
+    # ------------------------------------------------------------------ misc text
+    def draw_message_at_x_y(self, message, x, y, size):
+        font = pygame.font.SysFont('Arial', size)
+        surf = font.render(message, True, C.TEXT_COLOR)
+        self.surface.blit(surf, surf.get_rect(center=(x, y)))
+
+    def draw_bottom_message(self, message, size):
+        font = pygame.font.SysFont('Arial', size)
+        surf = font.render(message, True, C.PROMPT_COLOR)
+        pill = self._alpha_surface(surf.get_width() + 20, surf.get_height() + 8, (0, 0, 0, 150))
+        rect = surf.get_rect(center=(C.SCREEN_WIDTH // 2, C.SCREEN_HEIGHT - 40))
+        self.surface.blit(pill, (rect.x - 10, rect.y - 4))
         self.surface.blit(surf, rect)
 
     def update(self):

@@ -372,11 +372,10 @@ class Game:
         input_active = True
         prompt = f"High Score! Enter Name (max {C.MAX_NAME_LENGTH}):"
 
-        while input_active and self.running: # Check self.running to allow quitting
-            self.screen.clear() # Clear screen for input display
-            # Draw only the game over message for context
+        while input_active and self.running:
+            self.screen.clear()
+            self.screen.draw_overlay()
             self.screen.draw_game_over_message(self.score)
-            # Draw the input prompt and box
             self.screen.draw_text_input(prompt, player_name, True)
             self.screen.update()
 
@@ -489,9 +488,10 @@ class Game:
 
         # Display final game over screen with scores and restart prompt
         self.screen.clear()
+        self.screen.draw_overlay()
         self.screen.draw_game_over_message(self.score)
         self.screen.draw_run_stats(self.apples_eaten, self.time_alive, self.max_level_reached)
-        self.screen.draw_high_score_list(self.high_scores)
+        self.screen.draw_high_score_list(self.high_scores, highlight_pos=insert_pos)
         self.screen.show_restart_prompt()
         self.screen.update()
 

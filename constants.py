@@ -102,7 +102,23 @@ REMOVE_OBSTACLE_SOUND_FILE = get_sound_file_path(SOUND_FOLDER, "remove-obstacle.
 BACKGROUND_COLOR = (0, 0, 0)
 GRID_LINE_COLOR = (12, 12, 12)      # Barely-visible grid overlay
 TEXT_COLOR = (255, 255, 255)
+TEXT_DIM_COLOR = (180, 180, 180)    # Secondary / caption text
 SCORE_POS = (10, 10)
+
+# Death / Game-over screen colours
+GAMEOVER_TITLE_COLOR = (220, 50, 50)       # Bold red "Game Over!" title
+GAMEOVER_SCORE_COLOR = (255, 200, 80)      # Warm amber for the score
+PANEL_BG_RGBA = (15, 15, 30, 210)          # Deep-dark blue panel background
+PANEL_BORDER_COLOR = (70, 70, 120)         # Subtle blue panel border
+
+# High-score rank medal colours
+HS_RANK_GOLD   = (255, 215,   0)
+HS_RANK_SILVER = (200, 200, 200)
+HS_RANK_BRONZE = (205, 127,  50)
+HS_HIGHLIGHT   = (255, 255, 120)           # Newly set score
+
+# Prompt / restart colours
+PROMPT_COLOR   = (160, 160, 160)           # Dimmed prompt text
 
 # Snake Visual Constants
 SNAKE_SEGMENT_INSET = 1             # px inset on each side of every segment rect
