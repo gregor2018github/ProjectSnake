@@ -99,13 +99,14 @@ class Snake:
 
         # Head
         head_x, head_y = self.positions[0]
-        _draw_seg(head_x, head_y, self.head_color)
+        inv = getattr(self, 'invert_colors', False)
+        _draw_seg(head_x, head_y, (200, 30, 30) if inv else self.head_color)
 
-        # Body with gradient: green channel fades from 200 (near head) to 70 (tail)
+        # Body gradient: green normally, red when color-inverted
         for i, (x, y) in enumerate(self.positions[1:]):
             t = i / max(n - 2, 1)
-            g = int(200 - t * 130)   # 200 → 70
-            _draw_seg(x, y, (0, g, 0))
+            v = int(200 - t * 130)   # 200 → 70
+            _draw_seg(x, y, (v, 0, 0) if inv else (0, v, 0))
 
         # Eyes on head (2 small white dots)
         dx, dy = self.direction

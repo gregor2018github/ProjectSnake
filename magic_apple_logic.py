@@ -56,3 +56,8 @@ def manual_control(game):
     """Snake stops auto-moving; player must press a direction key for each step.
     Lasts BUFF_MANUAL_MOVES key-presses (move-count-based, not time-based)."""
     game.active_buffs['manual_control'] = C.BUFF_MANUAL_MOVES
+
+
+def color_invert(game):
+    """Inverts all rendered colors on screen for a limited time."""
+    game.active_buffs['color_invert'] = C.BUFF_DURATION_INVERT

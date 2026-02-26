@@ -386,14 +386,32 @@ class Game:
 
     def draw(self):
         """ Draws all game elements onto the screen. """
+        invert = 'color_invert' in self.active_buffs
+        self.screen.invert_mode = invert
         self.screen.clear()
+
         for effect in self.particle_effects:
             effect.draw(self.screen.surface)
+
         self.snake.ghost_alpha = C.SNAKE_GHOST_ALPHA if 'ghost_mode' in self.active_buffs else 255
+        self.snake.invert_colors = invert
         self.screen.draw_element(self.snake)
+
+        # Apple: green when inverted, normal red otherwise
+        orig_apple_color = self.apple.color
+        if invert:
+            self.apple.color = (0, 190, 0)
         self.screen.draw_element(self.apple)
+        self.apple.color = orig_apple_color
+
+        # Magic apples: swap fill to magenta when inverted; border (lifespan) unchanged
         for magic_apple in self.magic_apples:
+            orig_ma_color = magic_apple.color
+            if invert:
+                magic_apple.color = (200, 0, 200)
             self.screen.draw_element(magic_apple)
+            magic_apple.color = orig_ma_color
+
         for obstacle in self.obstacles:
             self.screen.draw_element(obstacle)
         for moving_obstacle in self.moving_obstacles:

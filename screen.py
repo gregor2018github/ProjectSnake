@@ -38,6 +38,8 @@ class Screen:
         # Ripple wave state for the death screen animation
         self._waves = []      # list of [cx, cy, radius]
         self._wave_tick = 0
+        # Color-invert buff flag – set each frame by Game.draw()
+        self.invert_mode = False
 
     # ------------------------------------------------------------------ helpers
     def _alpha_surface(self, w, h, color_rgba):
@@ -72,19 +74,25 @@ class Screen:
 
     # ------------------------------------------------------------------ gameplay HUD
     def clear(self):
-        self.surface.fill(C.BACKGROUND_COLOR)
+        if self.invert_mode:
+            self.surface.fill((110, 110, 110))          # grey background
+            grid_color = (55, 55, 55)                   # dark grid lines
+        else:
+            self.surface.fill(C.BACKGROUND_COLOR)
+            grid_color = C.GRID_LINE_COLOR
         for x in range(0, C.SCREEN_WIDTH, C.GRID_SIZE):
-            pygame.draw.line(self.surface, C.GRID_LINE_COLOR, (x, 0), (x, C.SCREEN_HEIGHT))
+            pygame.draw.line(self.surface, grid_color, (x, 0), (x, C.SCREEN_HEIGHT))
         for y in range(0, C.SCREEN_HEIGHT, C.GRID_SIZE):
-            pygame.draw.line(self.surface, C.GRID_LINE_COLOR, (0, y), (C.SCREEN_WIDTH, y))
+            pygame.draw.line(self.surface, grid_color, (0, y), (C.SCREEN_WIDTH, y))
 
     def draw_element(self, element):
         element.draw(self.surface)
 
     def draw_score_and_level(self, score, level):
         """Score + level on a single semi-transparent HUD bar."""
-        score_surf = self.hud_font.render(f'Score: {score}', True, C.TEXT_COLOR)
-        level_surf = self.hud_font.render(f'Level: {level}', True, C.TEXT_COLOR)
+        txt_color = (80, 130, 255) if self.invert_mode else C.TEXT_COLOR
+        score_surf = self.hud_font.render(f'Score: {score}', True, txt_color)
+        level_surf = self.hud_font.render(f'Level: {level}', True, txt_color)
         score_rect = score_surf.get_rect(topleft=C.SCORE_POS)
         level_rect = level_surf.get_rect(topleft=(C.SCORE_POS[0] + 150, C.SCORE_POS[1]))
         self._draw_hud_bar(score_rect.union(level_rect))
