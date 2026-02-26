@@ -1,7 +1,7 @@
 # ProjectSnake - TODO List
 
 ## Current Tasks
-- [ ] make continue and quit buttons clickable by mouse
+- [x] make continue and quit buttons clickable by mouse
 - [ ] magic apple where snake is not moving automatically anymore, it must be moved manually - for x movements (every movement counts, not time-based)
 - [ ] magic apple where game colors invert (for a certain amount of time)
 

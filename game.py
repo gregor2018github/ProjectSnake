@@ -449,6 +449,7 @@ class Game:
         # Freeze the current frame; only the dialog animates on top
         snapshot = self.screen.surface.copy()
         tick = 0
+        quit_rect = resume_rect = None
         while True:
             for event in pygame.event.get():
                 if event.type == QUIT:
@@ -460,8 +461,14 @@ class Game:
                         return
                     if event.key == K_SPACE:
                         return  # resume
+                if event.type == MOUSEBUTTONDOWN and event.button == 1:
+                    if quit_rect and quit_rect.collidepoint(event.pos):
+                        self.running = False
+                        return
+                    if resume_rect and resume_rect.collidepoint(event.pos):
+                        return
             self.screen.surface.blit(snapshot, (0, 0))
-            self.screen.draw_quit_confirm(tick)
+            quit_rect, resume_rect = self.screen.draw_quit_confirm(tick)
             self.screen.update()
             self.clock.tick(20)
             tick += 1
@@ -564,11 +571,12 @@ class Game:
         self.screen.reset_waves()
         waiting_for_input = True
         anim_tick = 0
+        restart_rect = quit_rect = None
         while waiting_for_input and self.running:
             self.clock.tick(20)
             anim_tick += 1
             self.screen.tick_waves()
-            self.screen.draw_death_screen(
+            restart_rect, quit_rect = self.screen.draw_death_screen(
                 self.score, stats, self.high_scores,
                 highlight_pos=insert_pos, tick=anim_tick
             )
@@ -581,6 +589,12 @@ class Game:
                     if event.key == K_ESCAPE:
                         self.running = False
                     elif event.key == K_RETURN:
+                        waiting_for_input = False
+                elif event.type == MOUSEBUTTONDOWN and event.button == 1:
+                    if restart_rect and restart_rect.collidepoint(event.pos):
+                        waiting_for_input = False
+                    elif quit_rect and quit_rect.collidepoint(event.pos):
+                        self.running = False
                         waiting_for_input = False
 
         # If the game is still running (i.e., didn't quit), reset for a new game

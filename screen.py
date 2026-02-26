@@ -254,20 +254,27 @@ class Screen:
         # Pulsing buttons
         pulse = int(160 + 80 * math.sin(tick * 0.18))
         btn_w, btn_h, gap = 154, 34, 16
+        mouse = pygame.mouse.get_pos()
 
         # ESC – Yes, quit
-        qr = pygame.Rect(cx - gap // 2 - btn_w, cy + 4, btn_w, btn_h)
-        self._panel(qr, (30, 0, 0, 220))
-        pygame.draw.rect(self.surface, (pulse // 2, 0, 0), qr, 2)
-        qs = self.prompt_font.render('ESC   Yes, Quit', True, (pulse // 2 + 60, 60, 60))
+        qr     = pygame.Rect(cx - gap // 2 - btn_w, cy + 4, btn_w, btn_h)
+        qr_hot = qr.collidepoint(mouse)
+        self._panel(qr, (70, 0, 0, 240) if qr_hot else (30, 0, 0, 220))
+        pygame.draw.rect(self.surface, (220, 0, 0) if qr_hot else (pulse // 2, 0, 0), qr, 2)
+        qs = self.prompt_font.render('ESC   Yes, Quit', True,
+                                     (255, 100, 100) if qr_hot else (pulse // 2 + 60, 60, 60))
         self.surface.blit(qs, qs.get_rect(center=qr.center))
 
         # SPACE – No, resume
-        sr = pygame.Rect(cx + gap // 2, cy + 4, btn_w, btn_h)
-        self._panel(sr, (0, 30, 0, 220))
-        pygame.draw.rect(self.surface, (0, pulse, 0), sr, 2)
-        ss = self.prompt_font.render('SPACE   Resume', True, (80, pulse, 80))
+        sr     = pygame.Rect(cx + gap // 2, cy + 4, btn_w, btn_h)
+        sr_hot = sr.collidepoint(mouse)
+        self._panel(sr, (0, 55, 0, 240) if sr_hot else (0, 30, 0, 220))
+        pygame.draw.rect(self.surface, (0, 255, 0) if sr_hot else (0, pulse, 0), sr, 2)
+        ss = self.prompt_font.render('SPACE   Resume', True,
+                                     (160, 255, 160) if sr_hot else (80, pulse, 80))
         self.surface.blit(ss, ss.get_rect(center=sr.center))
+
+        return qr, sr  # (quit_rect, resume_rect)
 
     def draw_bottom_message(self, message, size):
         font = pygame.font.SysFont('Arial', size)
@@ -377,25 +384,34 @@ class Screen:
 
     # ------------------------------------------------------------------ restart buttons
     def _draw_restart_buttons(self, tick):
-        """Two styled keyboard-hint buttons that pulse to signal interactivity."""
-        pulse   = int(160 + 80 * math.sin(tick * 0.15))   # 80-240
-        cy      = 492
-        btn_h   = 36
-        btn_w   = 170
+        """Two styled keyboard-hint buttons that pulse to signal interactivity.
+        Returns (restart_rect, quit_rect) for mouse hit-testing."""
+        pulse = int(160 + 80 * math.sin(tick * 0.15))   # 80-240
+        cy    = 492
+        btn_h = 36
+        btn_w = 170
+        mouse = pygame.mouse.get_pos()
 
         # ENTER – Restart
-        er = pygame.Rect(C.SCREEN_WIDTH // 2 - btn_w - 16, cy - btn_h // 2, btn_w, btn_h)
-        self._panel(er, (0, 30, 0, 200))
-        pygame.draw.rect(self.surface, (0, pulse, 0), er, 2)
-        es = self.prompt_font.render('ENTER   Restart', True, (80, pulse, 80))
+        er      = pygame.Rect(C.SCREEN_WIDTH // 2 - btn_w - 16, cy - btn_h // 2, btn_w, btn_h)
+        er_hot  = er.collidepoint(mouse)
+        self._panel(er, (0, 55, 0, 230) if er_hot else (0, 30, 0, 200))
+        pygame.draw.rect(self.surface, (0, 255, 0) if er_hot else (0, pulse, 0), er, 2)
+        es = self.prompt_font.render('ENTER   Restart', True,
+                                     (160, 255, 160) if er_hot else (80, pulse, 80))
         self.surface.blit(es, es.get_rect(center=er.center))
 
         # ESC – Quit
-        qr = pygame.Rect(C.SCREEN_WIDTH // 2 + 16, cy - btn_h // 2, btn_w, btn_h)
-        self._panel(qr, (30, 0, 0, 200))
-        pygame.draw.rect(self.surface, (pulse // 2, 0, 0), qr, 2)
-        qs = self.prompt_font.render('ESC   Quit', True, (pulse // 2 + 60, 60, 60))
+        qr      = pygame.Rect(C.SCREEN_WIDTH // 2 + 16, cy - btn_h // 2, btn_w, btn_h)
+        qr_hot  = qr.collidepoint(mouse)
+        self._panel(qr, (70, 0, 0, 230) if qr_hot else (30, 0, 0, 200))
+        br = (pulse // 2 + 60, 0, 0) if not qr_hot else (220, 0, 0)
+        pygame.draw.rect(self.surface, br, qr, 2)
+        qs = self.prompt_font.render('ESC   Quit', True,
+                                     (255, 100, 100) if qr_hot else (pulse // 2 + 60, 60, 60))
         self.surface.blit(qs, qs.get_rect(center=qr.center))
+
+        return er, qr
 
     # ------------------------------------------------------------------ full death screen
     def draw_death_screen(self, score, stats, high_scores, highlight_pos=-1, tick=0):
@@ -428,7 +444,8 @@ class Screen:
         self._draw_hs_section(high_scores, highlight_pos, y_title=242)
 
         # 9. Pulsing restart/quit buttons (below panel)
-        self._draw_restart_buttons(tick)
+        restart_rect, quit_rect = self._draw_restart_buttons(tick)
+        return restart_rect, quit_rect
 
     def update(self):
         pygame.display.update()
