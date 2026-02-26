@@ -236,6 +236,39 @@ class Screen:
         surf = font.render(message, True, C.TEXT_COLOR)
         self.surface.blit(surf, surf.get_rect(center=(x, y)))
 
+    # ------------------------------------------------------------------ quit confirm
+    def draw_quit_confirm(self, tick):
+        """Overlay asking the player to confirm quitting. Returns nothing."""
+        cx, cy = C.SCREEN_WIDTH // 2, C.SCREEN_HEIGHT // 2
+
+        # Dim the game behind the dialog
+        self.draw_overlay(alpha=160)
+
+        # Dialog panel
+        panel = pygame.Rect(cx - 178, cy - 68, 356, 136)
+        self._panel(panel, (10, 10, 28, 240), C.PANEL_BORDER_COLOR)
+
+        # Title
+        self._shadow_text(self.title_font, 'Quit?', C.GAMEOVER_TITLE_COLOR, (cx, cy - 42))
+
+        # Pulsing buttons
+        pulse = int(160 + 80 * math.sin(tick * 0.18))
+        btn_w, btn_h, gap = 154, 34, 16
+
+        # ESC – Yes, quit
+        qr = pygame.Rect(cx - gap // 2 - btn_w, cy + 4, btn_w, btn_h)
+        self._panel(qr, (30, 0, 0, 220))
+        pygame.draw.rect(self.surface, (pulse // 2, 0, 0), qr, 2)
+        qs = self.prompt_font.render('ESC   Yes, Quit', True, (pulse // 2 + 60, 60, 60))
+        self.surface.blit(qs, qs.get_rect(center=qr.center))
+
+        # SPACE – No, resume
+        sr = pygame.Rect(cx + gap // 2, cy + 4, btn_w, btn_h)
+        self._panel(sr, (0, 30, 0, 220))
+        pygame.draw.rect(self.surface, (0, pulse, 0), sr, 2)
+        ss = self.prompt_font.render('SPACE   Resume', True, (80, pulse, 80))
+        self.surface.blit(ss, ss.get_rect(center=sr.center))
+
     def draw_bottom_message(self, message, size):
         font = pygame.font.SysFont('Arial', size)
         surf = font.render(message, True, C.PROMPT_COLOR)

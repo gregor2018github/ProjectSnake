@@ -239,7 +239,7 @@ class Game:
                 elif event.key == K_SPACE:
                     self.pause_game()
                 elif event.key == K_ESCAPE:
-                    self.running = False # Allow quitting during gameplay
+                    self.confirm_quit()
 
                 if new_dir:
                     # Store the intended direction instead of changing immediately
@@ -443,6 +443,28 @@ class Game:
     def pause_game(self):
         """Pauses the game and waits for player input to continue."""
         self.wait_for_continue()
+
+    def confirm_quit(self):
+        """Show a quit-confirmation dialog; quit only if ESC is pressed again."""
+        # Freeze the current frame; only the dialog animates on top
+        snapshot = self.screen.surface.copy()
+        tick = 0
+        while True:
+            for event in pygame.event.get():
+                if event.type == QUIT:
+                    self.running = False
+                    return
+                if event.type == KEYDOWN:
+                    if event.key == K_ESCAPE:
+                        self.running = False
+                        return
+                    if event.key == K_SPACE:
+                        return  # resume
+            self.screen.surface.blit(snapshot, (0, 0))
+            self.screen.draw_quit_confirm(tick)
+            self.screen.update()
+            self.clock.tick(20)
+            tick += 1
 
     def wait_for_continue(self):
         """Game pauses and awaits 'Space'. Other buttons cannot be pressed."""

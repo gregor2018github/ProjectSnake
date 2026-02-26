@@ -1,12 +1,15 @@
 # ProjectSnake - TODO List
 
 ## Current Tasks
-- [ ] Ask if player really wants to quit after pressing ESC
+- [ ] make continue and quit buttons clickable by mouse
+- [ ] magic apple where snake is not moving automatically anymore, it must be moved manually - for x movements (every movement counts, not time-based)
+- [ ] magic apple where game colors invert (for a certain amount of time)
 
 ## Backlog
 - [ ] Collect more statistics during playthrough (e.g. longest snake, most apples in a row)
 
 ## Completed Tasks
+- [x] Ask if player really wants to quit after pressing ESC
 - [x] Initial project setup.
 - [x] Change Apple Removal Particles into something circular around the epicentrum instead of dusk inside the epicentrum
 - [x] Obstacles must spawn with a minimum distance from the snake head
@@ -29,10 +32,9 @@
 
 ## Notes & Ideas
 - Ideas for special items/power-ups:
-    - snake is not moving automatically anymore, it must be moved manually
-    - game has realistic look with little gifs instead of pixels (permanent buff)
+    
     - game colors invert (for a certain amount of time)
-    - apple is pulsing between visible and invisible
+    - apple and snake are pulsing between visible and invisible
     - ghost snake which can go through obstacles
     - snake can shoot projectiles
     - level enlarges
