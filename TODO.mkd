@@ -31,21 +31,117 @@
 - [x] Fix bite-self sound missing None-guard (magic_apple_eat_sound)
 - [x] Magic apple that spawns 5 random enemies that despawn after 100 ticks
 
-## Notes & Ideas
-- Ideas for special items/power-ups:
-    
-    - apple and snake are pulsing between visible and invisible
-    - ghost snake which can go through obstacles
-    - snake can shoot projectiles
-    - level enlarges
-    - level becomes smaller
+---
 
-- Local Multiplayer (WASD vs Arrowkeys)
-- Special perks to pick up (e.g., speed boost, invincibility)
-- Health system for the snake (e.g., if it hits an obstacle, it loses health instead of dying)
+## Ideas & Expansion
+
+### New Levels (Beyond Level 4)
+
+**Level 5 – Darkness**
+The playfield goes almost completely black. Only a small lit radius (e.g. 5 cells) around the snake head is visible. Obstacles and apples outside this circle are hidden until the snake gets close. High tension, forces slow/careful play.
+
+**Level 5 alt – Shrinking Arena**
+A border of indestructible wall tiles slowly closes in from all four sides, one cell at a time, every X apples eaten. The playable area shrinks until the snake has almost no room. Death is inevitable — the question is: how long?
+
+**Level 6 – Moving Apple**
+The normal apple starts drifting away from the snake head at a slow speed, bouncing off walls. The snake must chase it. Drastically changes pacing — from reactive to pursuit.
+
+**Level 7 – Teleporter Maze**
+Teleporter pads (glowing colored tiles) spawn on the grid. Entering one warps the snake instantly to the paired pad on the other side. Dramatically changes path planning and can accidentally save or kill the player.
+
+**Level 8 – Blitz**
+Everything is faster. Obstacles move at 3× speed. The game_speed also spikes up. Magic apples despawn in half the time. Survival is the only goal. Designed to feel chaotic and frantic.
+
+**Level 9 – Mirror World**
+The snake is duplicated: a ghost mirror-snake moves in the opposite direction simultaneously (reflected across the center). The mirror snake is lethal on contact. The player must navigate without letting the real and mirror paths intersect.
+
+**Level 10 – Boss**
+A single large 3×3 "boss" obstacle appears that moves in aggressive patterns (homing toward the snake, then retreating, etc.). Killing it (via ghost mode or shield) clears the board and grants a massive score bonus. If not killed, it spawns smaller obstacles over time.
+
+---
+
+### New Magic Apple Buffs
+
+**Reverse Controls** *(malus)*
+Left/right (or up/down) input is swapped for the next 15 key-presses. Like manual_control but worse — the player must actively un-learn muscle memory.
+
+**Darkness** *(malus)*
+Same as the level idea above but as a temporary debuff: the screen goes dark except for a radius around the head for ~80 ticks.
+
+**Turbo Dash** *(mixed)*
+For the next 8 moves, the snake moves 2 grid cells per step instead of 1. Makes the snake very fast but hard to stop precisely. Apples eaten during turbo count double. Self-collision risk skyrockets.
+
+**Magnet** *(good)*
+The normal apple slowly drifts 1 cell toward the snake head every 3 ticks for 60 ticks. Makes the next apple very easy to collect, like a guided pickup.
+
+**Warp** *(good/neutral)*
+Instantly teleports the snake head to a random free cell far from obstacles. The body stays intact and snaps to the new head position. Can save the player from a tight spot or land them somewhere worse.
+
+**Apple Rain** *(good)*
+3 additional normal apples spawn simultaneously for 50 ticks. Each is worth 1 point. The field gets crowded with food — but also obstacles if the player eats them all.
+
+**Score Frenzy** *(good)*
+Every apple eaten is worth 5× points for the next 8 apples. Short window, massive reward if played efficiently.
+
+**Confusion** *(malus)*
+The four direction keys are silently reassigned to random different directions for 10 key-presses. No HUD warning — the player just notices something feels wrong.
+
+**Body Armor** *(good)*
+Moving obstacles that touch the snake's body (not just head) bounce off harmlessly for 60 ticks. The body becomes a shield. Encourages wrapping the body strategically.
+
+**Clone Apple** *(neutral)*
+A second identical apple appears on the field. Eating either one counts as a normal apple. When one is eaten the other disappears. Gives the player options but also confuses the level logic slightly.
+
+---
+
+### Late-Game Motivation
+
+**Combo Multiplier** *(implemented)*
+Eating apples in quick succession (within X ticks of each other) builds a combo counter: 1×, 2×, 3×… that multiplies score per apple. Missing the timing window (or getting hit) resets the combo. Show the combo counter near the apple on pickup.
+
+**Streak Tracking**
+Track "flawless streaks" — apples eaten without hitting anything. Show it on the death screen. Could gate achievements (e.g., "Survived 30 apples without a single obstacle hit").
+
+**Achievement / Badge System**
+Unlock badges mid-run and show them on the death screen. Examples:
+- "Speedrunner" — reached level 4 in under 60 apples
+- "Glutton" — snake length exceeded 40
+- "Lucky" — survived 5 magic apple malus effects
+- "Untouchable" — cleared a full level without any obstacle collision
+- "Hoarder" — had 3+ active buffs simultaneously
+- "The Long Way" — traveled 2000+ cells in one run
+
+**Endless Mode**
+After level 4, the game continues with escalating difficulty: obstacle speed increases every 10 apples, new random obstacle types mix together, and magic apple spawn rate slowly climbs. No ceiling — just how far can you go.
+
+**Daily Challenge**
+A fixed random seed (based on the date) determines obstacle positions, magic apple types, and layout for the day. All players get the same run. High score for that seed is tracked separately. Resets at midnight.
+
+---
+
+### Structural / Architecture Ideas
+
+**Puzzle Mode**
+Pre-designed grid layouts. The snake starts at a fixed length and must reach the apple using the fewest moves possible. No obstacles spawn; the grid itself is the puzzle. 10–20 handcrafted levels.
+
+**Challenge Rooms / Wave Mode**
+Instead of free-form play, waves of 10–20 obstacles spawn all at once from the edges, then clear after X ticks, then the next wave comes. Between waves the player collects apples for score. Think: fixed arena, rhythmic threat cycles.
+
+**Destructible Obstacles**
+Certain obstacle types (e.g., yellow "fragile" obstacles) can be destroyed by the snake running into them at speed (e.g., during turbo dash or ghost mode). Creates a risk-reward mechanic around collision.
+
+**Obstacle Types With Different Behaviors**
+- *Tracker*: slowly homes in on the snake head
+- *Splitter*: when removed by a buff, splits into 2 smaller ones
+- *Exploder*: when it despawns (or is destroyed), clears all obstacles in a 3-cell radius
+
+**Persistent Meta Progression**
+Between runs, earn "coins" based on score. Spend coins on passive upgrades that persist across games: starting speed boost, extra shield charge, slightly longer magic apple lifespan, higher magic apple spawn rate. Stored in a save file next to highscores.txt.
+
+---
 
 ## Bugs
 - Quick "Left-Up" leads to snake biting itself, but snake should not be allowed to turn that fast -> **Fixed**
 
 ---
-*Last updated: 24-04-2025*
+*Last updated: 2025-02-26*

@@ -72,6 +72,10 @@ BUFF_DURATION_INVERT = 90   # ticks the color-invert buff lasts
 BUFF_SPAWN_ENEMIES_COUNT = 5        # number of enemies the spawn_enemies buff creates
 BUFF_SPAWN_ENEMIES_LIFESPAN = 100   # ticks before spawned enemies despawn
 
+# Combo Multiplier
+COMBO_WINDOW = 30       # ticks the player has to eat the next apple and keep the chain
+COMBO_MAX_MULT = 4      # highest score multiplier tier (×1, ×2, ×3, ×4)
+
 # Buff HUD display info: buff_key -> (label, RGB color)
 BUFF_DISPLAY_NAMES = {
     'increase_tick_speed': ('Speed+',  (220,  80,  80)),   # bad – red

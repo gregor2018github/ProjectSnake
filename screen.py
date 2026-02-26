@@ -88,8 +88,9 @@ class Screen:
     def draw_element(self, element):
         element.draw(self.surface)
 
-    def draw_score_and_level(self, score, level):
-        """Score + level on a single semi-transparent HUD bar."""
+    def draw_score_and_level(self, score, level, combo=0, combo_timer=0):
+        """Score + level on a single semi-transparent HUD bar.
+        When combo >= 2 a coloured pill with a draining timer bar appears below."""
         txt_color = (80, 130, 255) if self.invert_mode else C.TEXT_COLOR
         score_surf = self.hud_font.render(f'Score: {score}', True, txt_color)
         level_surf = self.hud_font.render(f'Level: {level}', True, txt_color)
@@ -98,6 +99,40 @@ class Screen:
         self._draw_hud_bar(score_rect.union(level_rect))
         self.surface.blit(score_surf, score_rect)
         self.surface.blit(level_surf, level_rect)
+
+        # Combo multiplier pill
+        if combo >= 2:
+            mult = min(combo, C.COMBO_MAX_MULT)
+            if mult == 2:
+                combo_color = (255, 210,  0)   # amber
+            elif mult == 3:
+                combo_color = (255, 130,  0)   # orange
+            else:
+                combo_color = (255,  50, 50)   # red
+
+            label      = f'\u00d7{mult} COMBO'
+            combo_surf = self.buff_font.render(label, True, combo_color)
+            combo_rect = combo_surf.get_rect(topleft=(C.SCORE_POS[0], C.SCORE_POS[1] + 34))
+
+            # Pill background + border (matches buff style)
+            r, g, b = combo_color
+            pill_x = combo_rect.x - 7
+            pill_y = combo_rect.y - 3
+            pill_w = combo_rect.width + 14
+            pill_h = combo_rect.height + 6
+            pill = self._alpha_surface(pill_w, pill_h, (r // 5, g // 5, b // 5, 200))
+            self.surface.blit(pill, (pill_x, pill_y))
+            pygame.draw.rect(self.surface, (r // 2, g // 2, b // 2),
+                             pygame.Rect(pill_x, pill_y, pill_w, pill_h), 1)
+            self.surface.blit(combo_surf, combo_rect)
+
+            # Thin timer bar underneath: drains left-to-right as time runs out
+            bar_x = pill_x
+            bar_y = pill_y + pill_h + 1
+            bar_h = 2
+            fill_w = max(0, int(pill_w * combo_timer / C.COMBO_WINDOW))
+            pygame.draw.rect(self.surface, (r // 4, g // 4, b // 4), (bar_x, bar_y, pill_w, bar_h))
+            pygame.draw.rect(self.surface, combo_color, (bar_x, bar_y, fill_w, bar_h))
 
     def draw_buffs(self, active_buffs):
         """Active buff pills in the top-right corner with a coloured background."""
@@ -436,8 +471,12 @@ class Screen:
         # 3. "GAME  OVER" title
         self._shadow_text(self.title_font, 'GAME  OVER', C.GAMEOVER_TITLE_COLOR, (cx, 60))
 
-        # 4. Score
-        self._shadow_text(self.score_font, f'Score   {score}', C.GAMEOVER_SCORE_COLOR, (cx, 108))
+        # 4. Score (+ best combo badge when the player achieved one)
+        max_combo = stats.get('max_combo', 0)
+        score_text = f'Score   {score}'
+        if max_combo >= 2:
+            score_text += f'     \u00d7{max_combo} best combo'
+        self._shadow_text(self.score_font, score_text, C.GAMEOVER_SCORE_COLOR, (cx, 108))
 
         # 5. Thin divider
         pygame.draw.line(self.surface, C.PANEL_BORDER_COLOR, (38, 130), (562, 130), 1)

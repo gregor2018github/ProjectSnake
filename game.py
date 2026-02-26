@@ -317,6 +317,12 @@ class Game:
         # Tick time-based buff timers every tick regardless of snake movement
         self._tick_active_buffs()
 
+        # Tick combo timer; break chain when it expires
+        if self.combo_timer > 0:
+            self.combo_timer -= 1
+            if self.combo_timer == 0:
+                self.combo_count = 0
+
         # Track time alive
         self.time_alive += 1
 
@@ -346,7 +352,13 @@ class Game:
         """ Checks for collisions between game objects. """
         # Snake eating apple
         if self.snake.collides_with_rect(self.apple.rect):
-            self.score += 2 if 'double_score' in self.active_buffs else 1
+            self.combo_count += 1
+            self.combo_timer = C.COMBO_WINDOW
+            if self.combo_count > self.max_combo:
+                self.max_combo = self.combo_count
+            combo_mult = min(self.combo_count, C.COMBO_MAX_MULT)
+            base_score = 2 if 'double_score' in self.active_buffs else 1
+            self.score += base_score * combo_mult
             self.apples_eaten += 1
             if 'no_grow' not in self.active_buffs:
                 self.snake.grow()
@@ -442,7 +454,8 @@ class Game:
                 active.append(ann)
         self.buff_announcements = active
 
-        self.screen.draw_score_and_level(self.score, self.level)
+        self.screen.draw_score_and_level(self.score, self.level,
+                                          self.combo_count, self.combo_timer)
         self.screen.draw_buffs(self.active_buffs)
         self.screen.update()
 
@@ -621,6 +634,7 @@ class Game:
             'max_length':   self.max_snake_length,
             'distance':     self.distance_traveled,
             'magic_apples': self.magic_apples_eaten,
+            'max_combo':    self.max_combo,
         }
 
         # Animated game-over screen – redraws each tick so waves animate
@@ -680,6 +694,9 @@ class Game:
         self.active_buffs = {}
         self.next_direction = None
         self.manual_step = False   # True for one tick when a key is pressed during manual_control
+        self.combo_count = 0       # consecutive apples eaten within the COMBO_WINDOW
+        self.combo_timer = 0       # ticks remaining before the combo chain breaks
+        self.max_combo = 0         # highest combo_count reached this run
         self.removing_static_obstacles = False
         self.removing_orthogonal_obstacles = False
         self.removing_diagonal_obstacles = False
