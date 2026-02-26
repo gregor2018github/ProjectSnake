@@ -19,20 +19,19 @@
 - [x] Magic Apple visual lifespan indicator (green→red border)
 - [x] Levels now progress by apples eaten (not score): L2=10, L3=20, L4=35
 - [x] Magic apple buffs implemented: Speed+, Slow, Ghost mode, No-Grow
+- [x] Extended magic apple buffs: Double Score, Freeze Obstacles, Shrink, Shield
+- [x] Buff announcement popup when magic apple is eaten
+- [x] Redesigned death screen with ripple animation and stat cards
+- [x] 4 random magic sounds play when magic apple is eaten
 - [x] Active buff HUD shown in top-right corner during gameplay
 - [x] Run stats (apples eaten, time, max level) shown on death screen
 - [x] Fix bite-self sound missing None-guard (magic_apple_eat_sound)
 
 ## Notes & Ideas
 - Ideas for special items/power-ups:
-    - faster movement speed
-    - slower movement speed
-    - eat without growing
-    - shield that holds x hits (permanent buff)
-    - temporary invincibility
     - snake is not moving automatically anymore, it must be moved manually
     - game has realistic look with little gifs instead of pixels (permanent buff)
-    - game colors invert (permanent buff)
+    - game colors invert (for a certain amount of time)
     - apple is pulsing between visible and invisible
     - ghost snake which can go through obstacles
     - snake can shoot projectiles

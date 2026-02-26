@@ -104,6 +104,12 @@ def get_sound_file_path(folder, filename):
 
 APPLE_EAT_SOUND_FILE = get_sound_file_path(SOUND_FOLDER, "apple-eat.wav")
 MAGIC_APPLE_EAT_SOUND_FILE = get_sound_file_path(SOUND_FOLDER, "magic-apple-eat.wav")
+MAGIC_APPLE_EAT_SOUND_FILES = [
+    get_sound_file_path(SOUND_FOLDER, "magic_1.mp3"),
+    get_sound_file_path(SOUND_FOLDER, "magic_2.mp3"),
+    get_sound_file_path(SOUND_FOLDER, "magic_3.mp3"),
+    get_sound_file_path(SOUND_FOLDER, "magic_4.mp3"),
+]
 BITE_SELF_SOUND_FILE = get_sound_file_path(SOUND_FOLDER, "bite-self.wav")
 BITE_OBSTACLE_SOUND_FILE = get_sound_file_path(SOUND_FOLDER, "bite-obstacle.wav")
 REMOVE_OBSTACLE_SOUND_FILE = get_sound_file_path(SOUND_FOLDER, "remove-obstacle.wav")

@@ -24,6 +24,7 @@ class Game:
         # Initialize sound attributes to None
         self.apple_eat_sound = None
         self.magic_apple_eat_sound = None
+        self.magic_apple_eat_sounds = []   # list of 4 random magic sounds
         self.bite_self_sound = None
         self.bite_obstacle_sound = None
         self.remove_obstacle_sound = None
@@ -39,6 +40,13 @@ class Game:
             self.magic_apple_eat_sound = mixer.Sound(C.MAGIC_APPLE_EAT_SOUND_FILE)
         except pygame.error as e:
             print(f"Warning: Could not load magic apple eat sound ({C.MAGIC_APPLE_EAT_SOUND_FILE}): {e}")
+
+        for path in C.MAGIC_APPLE_EAT_SOUND_FILES:
+            if path:
+                try:
+                    self.magic_apple_eat_sounds.append(mixer.Sound(path))
+                except pygame.error as e:
+                    print(f"Warning: Could not load magic sound ({path}): {e}")
 
         try:
             self.bite_self_sound = mixer.Sound(C.BITE_SELF_SOUND_FILE)
@@ -329,7 +337,9 @@ class Game:
             if self.snake.collides_with_rect(magic_apple.rect):
                 self.score += 5
                 self.snake.grow()
-                if self.magic_apple_eat_sound:
+                if self.magic_apple_eat_sounds:
+                    random.choice(self.magic_apple_eat_sounds).play()
+                elif self.magic_apple_eat_sound:
                     self.magic_apple_eat_sound.play()
                 # Dispatch buff effect
                 fn = getattr(mal, magic_apple.type, None)
