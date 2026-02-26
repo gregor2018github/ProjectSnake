@@ -53,7 +53,7 @@ MAGIC_APPLE_COLOR = (255, 215, 0)  # Gold
 MAGIC_APPLE_SIZE = (GRID_SIZE, GRID_SIZE)
 MAGIC_APPLE_TYPES = [
     "increase_tick_speed", "decrease_tick_speed", "ghost_mode", "no_grow",
-    "double_score", "freeze_obstacles", "shrink", "shield",
+    "double_score", "freeze_obstacles", "shrink", "shield", "manual_control",
 ]
 MAGIC_APPLE_SPAWN_PROBABILITY = 0.1  # Probability of spawning a magic apple when eating a normal apple
 MAGIC_APPLE_LIFESPAN = 50  # Lifespan in ticks
@@ -66,6 +66,7 @@ BUFF_DURATION_NO_GROW = 80
 BUFF_DURATION_DOUBLE_SCORE = 100
 BUFF_DURATION_FREEZE = 70
 SHIELD_HITS = 3             # obstacle hits the shield absorbs before breaking
+BUFF_MANUAL_MOVES = 20      # key-presses the manual control buff lasts
 
 # Buff HUD display info: buff_key -> (label, RGB color)
 BUFF_DISPLAY_NAMES = {
@@ -77,6 +78,7 @@ BUFF_DISPLAY_NAMES = {
     'freeze_obstacles':    ('Freeze',  (160, 230, 255)),
     'shield':              ('Shield',  (100, 180, 255)),
     'shrink':              ('Shrink!', (200, 100, 255)),
+    'manual_control':      ('Manual',  (255, 165,   0)),   # orange
 }
 
 # Obstacle Constants

@@ -13,12 +13,13 @@ from screen import Screen
 
 class Game:
     """ Manages the game state and main loop """
-    def __init__(self):
+    def __init__(self, test_buff=None):
         pygame.init()
         mixer.init() # Initialize the mixer
         self.screen = Screen() # Uses constants defined in screen.py/constants.py
         self.clock = pygame.time.Clock()
         self.high_scores = hs.load_high_scores() # Uses function from high_scores.py
+        self.test_buff = test_buff   # if set, force this magic apple type after the 1st apple
         self.gameover = False
 
         # Initialize sound attributes to None
@@ -78,8 +79,9 @@ class Game:
         apple.respawn(self._get_occupied_positions())
         return apple
     
-    def _add_magic_apple(self):
-        """ Adds a magic apple to the game at a random unoccupied position. """
+    def _add_magic_apple(self, force_type=None):
+        """ Adds a magic apple to the game at a random unoccupied position.
+        If force_type is given, that buff type is used instead of a random one. """
         while True:
             x = random.randint(0, C.GRID_WIDTH - 1)
             y = random.randint(0, C.GRID_HEIGHT - 1)
@@ -97,7 +99,7 @@ class Game:
             
             if new_pos not in occupied and distance_from_head >= C.MIN_OBSTACLE_SPAWN_DISTANCE:
                 # Create the magic apple
-                magic_apple = MagicApple(x, y)
+                magic_apple = MagicApple(x, y, force_type=force_type)
                 self.magic_apples.append(magic_apple)
                 break
 
@@ -244,18 +246,21 @@ class Game:
                 if new_dir:
                     # Store the intended direction instead of changing immediately
                     self.next_direction = new_dir
+                    if 'manual_control' in self.active_buffs:
+                        self.manual_step = True
 
     def _tick_active_buffs(self):
         """Decrement all active buff timers; restore speed when speed buffs expire.
         'shield' is charge-based, not time-based – it is never decremented here."""
-        expired = [k for k, v in self.active_buffs.items() if k != 'shield' and v <= 1]
+        charge_based = ('shield', 'manual_control')
+        expired = [k for k, v in self.active_buffs.items() if k not in charge_based and v <= 1]
         for key in expired:
             if key in ('increase_tick_speed', 'decrease_tick_speed'):
                 self.game_speed = self.base_speed
         self.active_buffs = {
-            k: (v if k == 'shield' else v - 1)
+            k: (v if k in charge_based else v - 1)
             for k, v in self.active_buffs.items()
-            if k == 'shield' or v > 1
+            if k in charge_based or v > 1
         }
 
     def update_game_state(self):
@@ -263,26 +268,39 @@ class Game:
         # Apply the buffered direction change before moving
         if self.next_direction:
             self.snake.change_direction(self.next_direction)
-            self.next_direction = None # Clear the buffer
+            self.next_direction = None
 
-        if not self.snake.move(ghost='ghost_mode' in self.active_buffs): # move() returns False on collision (self or wall if enabled)
-            # Check if the collision was with self
-            head = self.snake.get_head_position()
-            if head in self.snake.positions[1:]: # Check against body segments
-                if self.bite_self_sound:
-                    self.bite_self_sound.play()
-            self.game_over()
-            return # Stop further updates if game over occurred
+        # Manual control: snake only moves when a direction key was pressed
+        manual = 'manual_control' in self.active_buffs
+        do_move = not manual or self.manual_step
+        if manual and self.manual_step:
+            self.manual_step = False
 
-        # Tick buff timers
+        if do_move:
+            if not self.snake.move(ghost='ghost_mode' in self.active_buffs):
+                head = self.snake.get_head_position()
+                if head in self.snake.positions[1:]:
+                    if self.bite_self_sound:
+                        self.bite_self_sound.play()
+                self.game_over()
+                return
+
+            # Decrement manual-control move counter
+            if manual:
+                self.active_buffs['manual_control'] -= 1
+                if self.active_buffs['manual_control'] <= 0:
+                    del self.active_buffs['manual_control']
+
+            self.distance_traveled += 1
+            current_len = len(self.snake.positions)
+            if current_len > self.max_snake_length:
+                self.max_snake_length = current_len
+
+        # Tick time-based buff timers every tick regardless of snake movement
         self._tick_active_buffs()
 
-        # Track time alive and movement stats
+        # Track time alive
         self.time_alive += 1
-        self.distance_traveled += 1
-        current_len = len(self.snake.positions)
-        if current_len > self.max_snake_length:
-            self.max_snake_length = current_len
 
         # Check if player advances to next level
         self._check_for_level_up()
@@ -328,8 +346,10 @@ class Game:
             # Respawn apple, ensuring it's not on the snake or obstacles
             self.apple.respawn(self._get_occupied_positions())
 
-            # Sometimes a magic apple spawns when a normal apple was eaten
-            if random.random() < C.MAGIC_APPLE_SPAWN_PROBABILITY:
+            # In test mode, force the target buff after the very first apple
+            if self.test_buff and self.apples_eaten == 1:
+                self._add_magic_apple(force_type=self.test_buff)
+            elif random.random() < C.MAGIC_APPLE_SPAWN_PROBABILITY:
                 self._add_magic_apple()
 
         # Snake eating magic apple
@@ -623,6 +643,7 @@ class Game:
         self.game_speed = C.SNAKE_SPEED_INITIAL
         self.active_buffs = {}
         self.next_direction = None
+        self.manual_step = False   # True for one tick when a key is pressed during manual_control
         self.removing_static_obstacles = False
         self.removing_orthogonal_obstacles = False
         self.removing_diagonal_obstacles = False

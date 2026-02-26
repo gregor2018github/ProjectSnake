@@ -50,3 +50,9 @@ def shield(game):
     """Absorb up to SHIELD_HITS obstacle collisions without dying.
     The HUD counter shows remaining charges."""
     game.active_buffs['shield'] = C.SHIELD_HITS
+
+
+def manual_control(game):
+    """Snake stops auto-moving; player must press a direction key for each step.
+    Lasts BUFF_MANUAL_MOVES key-presses (move-count-based, not time-based)."""
+    game.active_buffs['manual_control'] = C.BUFF_MANUAL_MOVES

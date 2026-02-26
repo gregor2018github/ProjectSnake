@@ -186,9 +186,9 @@ class Apple(GameObject):
 
 class MagicApple(GameObject):
     """ Represents a magic apple """
-    def __init__(self, x, y):
+    def __init__(self, x, y, force_type=None):
         super().__init__(x, y, C.MAGIC_APPLE_SIZE[0], C.MAGIC_APPLE_SIZE[1], C.MAGIC_APPLE_COLOR)
-        self.type = random.choice(C.MAGIC_APPLE_TYPES)
+        self.type = force_type if force_type else random.choice(C.MAGIC_APPLE_TYPES)
         self.lifespan = C.MAGIC_APPLE_LIFESPAN + random.uniform(-0.5, 0.5) * C.MAGIC_APPLE_LIFESPAN
         self.initial_lifespan = self.lifespan
 
