@@ -3,6 +3,7 @@ The player can pick up special apples that grant unique bonuses or malus effects
 Each function receives the Game instance and mutates its state directly.
 """
 
+import random
 import constants as C
 
 
@@ -61,3 +62,10 @@ def manual_control(game):
 def color_invert(game):
     """Inverts all rendered colors on screen for a limited time."""
     game.active_buffs['color_invert'] = C.BUFF_DURATION_INVERT
+
+
+def spawn_enemies(game):
+    """Spawn BUFF_SPAWN_ENEMIES_COUNT random obstacles that despawn after BUFF_SPAWN_ENEMIES_LIFESPAN ticks."""
+    types = ["static", "orthogonal", "diagonal"]
+    for _ in range(C.BUFF_SPAWN_ENEMIES_COUNT):
+        game._add_obstacle(random.choice(types), lifespan=C.BUFF_SPAWN_ENEMIES_LIFESPAN)

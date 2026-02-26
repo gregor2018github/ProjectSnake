@@ -103,15 +103,16 @@ class Game:
                 self.magic_apples.append(magic_apple)
                 break
 
-    def _add_obstacle(self, obstacle_type="static"):
+    def _add_obstacle(self, obstacle_type="static", lifespan=None):
         """
         Adds a new obstacle of the specified type in a random, unoccupied grid location.
-        
+
         Args:
             obstacle_type: String indicating the type of obstacle to create.
                 "static" - Static obstacle for level 1
                 "orthogonal" - Orthogonally moving obstacle for level 2
                 "diagonal" - Diagonally moving obstacle for level 3
+            lifespan: If set, the obstacle will despawn after this many ticks.
         """
         # Map obstacle types to their classes and effect types
         obstacle_map = {
@@ -145,6 +146,8 @@ class Game:
             if new_pos not in occupied and distance_from_head >= C.MIN_OBSTACLE_SPAWN_DISTANCE:
                 # Create the obstacle
                 obstacle = obstacle_settings["class"](x, y)
+                if lifespan is not None:
+                    obstacle.lifespan = lifespan
                 # Add to the appropriate list
                 obstacle_settings["list"].append(obstacle)
                 # Create spawn effect
@@ -219,6 +222,21 @@ class Game:
             life_span = magic_apple.update()
             if life_span <= 0:
                 self.magic_apples.remove(magic_apple)
+
+        # Tick and despawn temporary obstacles (those tagged with a lifespan)
+        for ob in list(self.obstacles):
+            if hasattr(ob, 'lifespan'):
+                ob.lifespan -= 1
+                if ob.lifespan <= 0:
+                    self.obstacles.remove(ob)
+                    self.particle_effects.append(ParticleEffect(ob.x, ob.y, "obstacle_static", is_spawning=False))
+        for mob in list(self.moving_obstacles):
+            if hasattr(mob, 'lifespan'):
+                mob.lifespan -= 1
+                if mob.lifespan <= 0:
+                    self.moving_obstacles.remove(mob)
+                    effect_type = "obstacle_orthogonal" if isinstance(mob, OrthogonalMovingObstacle) else "obstacle_diagonal"
+                    self.particle_effects.append(ParticleEffect(int(mob.float_x), int(mob.float_y), effect_type, is_spawning=False))
 
         # Increment frame counter
         self.frame_counter += 1

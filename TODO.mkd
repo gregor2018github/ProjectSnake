@@ -2,8 +2,6 @@
 
 ## Current Tasks
 
-- [ ] apple that lets spawn 5 random enemies on the field that also despawn again after 100 ticks
-
 ## Backlog
 - [ ] Collect more statistics during playthrough (e.g. longest snake, most apples in a row)
 
@@ -31,6 +29,7 @@
 - [x] Active buff HUD shown in top-right corner during gameplay
 - [x] Run stats (apples eaten, time, max level) shown on death screen
 - [x] Fix bite-self sound missing None-guard (magic_apple_eat_sound)
+- [x] Magic apple that spawns 5 random enemies that despawn after 100 ticks
 
 ## Notes & Ideas
 - Ideas for special items/power-ups:
