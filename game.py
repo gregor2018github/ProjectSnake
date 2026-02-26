@@ -447,6 +447,16 @@ class Game:
         for moving_obstacle in self.moving_obstacles:
             self.screen.draw_element(moving_obstacle)
 
+        # Darkness buff: drape a fully-opaque vignette over the gameplay layer,
+        # leaving only a soft-edged circle around the snake head visible.
+        # Applied BEFORE buff announcements and HUD so they always stay readable.
+        if 'darkness' in self.active_buffs:
+            head_x, head_y = self.snake.get_head_position()
+            px = head_x * C.GRID_SIZE + C.GRID_SIZE // 2
+            py = head_y * C.GRID_SIZE + C.GRID_SIZE // 2
+            self.screen.apply_darkness((px, py))
+
+        # Buff announcements drawn after the darkness mask so they are never hidden
         active = []
         for ann in self.buff_announcements:
             if ann.update():

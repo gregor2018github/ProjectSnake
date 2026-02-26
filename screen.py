@@ -134,6 +134,17 @@ class Screen:
             pygame.draw.rect(self.surface, (r // 4, g // 4, b // 4), (bar_x, bar_y, pill_w, bar_h))
             pygame.draw.rect(self.surface, combo_color, (bar_x, bar_y, fill_w, bar_h))
 
+    def apply_darkness(self, head_pixel_pos):
+        """Overlay a fully-opaque dark mask with a soft-edged circle of light around head_pixel_pos."""
+        mask = pygame.Surface((self.width, self.height), pygame.SRCALPHA)
+        mask.fill((0, 0, 12, 255))   # completely opaque everywhere outside the lit circle
+        cx, cy = head_pixel_pos
+        r = C.DARKNESS_RADIUS
+        # Feathered edge: overwrite pixels from outer (semi-transparent) to inner (fully transparent)
+        for extra, alpha in [(40, 220), (25, 150), (12, 70), (0, 0)]:
+            pygame.draw.circle(mask, (0, 0, 12, alpha), (cx, cy), r + extra)
+        self.surface.blit(mask, (0, 0))
+
     def draw_buffs(self, active_buffs):
         """Active buff pills in the top-right corner with a coloured background."""
         if not active_buffs:

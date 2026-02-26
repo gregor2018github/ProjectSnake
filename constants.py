@@ -54,7 +54,7 @@ MAGIC_APPLE_SIZE = (GRID_SIZE, GRID_SIZE)
 MAGIC_APPLE_TYPES = [
     "increase_tick_speed", "decrease_tick_speed", "ghost_mode", "no_grow",
     "double_score", "freeze_obstacles", "shrink", "shield", "manual_control",
-    "color_invert", "spawn_enemies",
+    "color_invert", "spawn_enemies", "darkness",
 ]
 MAGIC_APPLE_SPAWN_PROBABILITY = 0.1  # Probability of spawning a magic apple when eating a normal apple
 MAGIC_APPLE_LIFESPAN = 50  # Lifespan in ticks
@@ -76,6 +76,10 @@ BUFF_SPAWN_ENEMIES_LIFESPAN = 100   # ticks before spawned enemies despawn
 COMBO_WINDOW = 30       # ticks the player has to eat the next apple and keep the chain
 COMBO_MAX_MULT = 4      # highest score multiplier tier (×1, ×2, ×3, ×4)
 
+# Darkness Buff
+BUFF_DURATION_DARKNESS = 80  # ticks the darkness buff lasts
+DARKNESS_RADIUS = 90         # px radius of the visible circle around the snake head
+
 # Buff HUD display info: buff_key -> (label, RGB color)
 BUFF_DISPLAY_NAMES = {
     'increase_tick_speed': ('Speed+',  (220,  80,  80)),   # bad – red
@@ -89,6 +93,7 @@ BUFF_DISPLAY_NAMES = {
     'manual_control':      ('Manual',  (255, 165,   0)),   # orange
     'color_invert':        ('Invert',  (220,   0, 220)),   # magenta
     'spawn_enemies':       ('Swarm!',  (255,  80,  40)),   # orange-red
+    'darkness':            ('Darkness',(60,   60, 180)),   # deep blue
 }
 
 # Obstacle Constants

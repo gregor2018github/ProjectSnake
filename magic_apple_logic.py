@@ -69,3 +69,8 @@ def spawn_enemies(game):
     types = ["static", "orthogonal", "diagonal"]
     for _ in range(C.BUFF_SPAWN_ENEMIES_COUNT):
         game._add_obstacle(random.choice(types), lifespan=C.BUFF_SPAWN_ENEMIES_LIFESPAN)
+
+
+def darkness(game):
+    """Shrouds the screen; only a small lit circle around the snake head remains visible."""
+    game.active_buffs['darkness'] = C.BUFF_DURATION_DARKNESS
