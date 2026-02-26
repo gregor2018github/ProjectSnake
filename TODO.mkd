@@ -2,12 +2,13 @@
 
 ## Current Tasks
 
-- [x] magic apple where game colors invert (for a certain amount of time)
+- [ ] apple that lets spawn 5 random enemies on the field that also despawn again after 100 ticks
 
 ## Backlog
 - [ ] Collect more statistics during playthrough (e.g. longest snake, most apples in a row)
 
 ## Completed Tasks
+- [x] magic apple where game colors invert (for a certain amount of time)
 - [x] magic apple where snake is not moving automatically anymore, it must be moved manually - for x movements (every movement counts, not time-based)
 - [x] make continue and quit buttons clickable by mouse
 - [x] Ask if player really wants to quit after pressing ESC
@@ -34,7 +35,6 @@
 ## Notes & Ideas
 - Ideas for special items/power-ups:
     
-    - game colors invert (for a certain amount of time)
     - apple and snake are pulsing between visible and invisible
     - ghost snake which can go through obstacles
     - snake can shoot projectiles
