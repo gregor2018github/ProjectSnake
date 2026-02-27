@@ -264,7 +264,7 @@ class Screen:
         self.surface.blit(surf, rect)
 
     def draw_text_input(self, prompt, current_text, active):
-        """Name-entry input box with a dark fill and accent border."""
+        """Name-entry input box with a dark fill, accent border, and blinking cursor."""
         # Prompt label
         prompt_surf = self.prompt_font.render(prompt, True, C.TEXT_DIM_COLOR)
         self.surface.blit(prompt_surf, prompt_surf.get_rect(center=C.INPUT_PROMPT_POS))
@@ -279,10 +279,18 @@ class Screen:
         pygame.draw.rect(self.surface, border_color, C.INPUT_BOX_RECT, 2)
 
         # Typed text
+        text_x = C.INPUT_BOX_RECT.x + 8
         text_surf = self.input_font.render(current_text, True, C.TEXT_COLOR)
         self.surface.blit(text_surf,
-                          text_surf.get_rect(midleft=(C.INPUT_BOX_RECT.x + 8,
-                                                       C.INPUT_BOX_RECT.centery)))
+                          text_surf.get_rect(midleft=(text_x, C.INPUT_BOX_RECT.centery)))
+
+        # Blinking cursor – visible for the first half of every 500 ms blink cycle
+        if active and (pygame.time.get_ticks() // 500) % 2 == 0:
+            cursor_x = text_x + text_surf.get_width() + 2
+            cursor_h = self.input_font.get_height() - 4
+            cursor_y = C.INPUT_BOX_RECT.centery - cursor_h // 2
+            pygame.draw.rect(self.surface, C.TEXT_COLOR,
+                             pygame.Rect(cursor_x, cursor_y, 2, cursor_h))
 
     # ------------------------------------------------------------------ misc text
     def draw_message_at_x_y(self, message, x, y, size):

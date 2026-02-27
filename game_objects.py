@@ -423,6 +423,62 @@ class SeekerObstacle(MovingObstacle):
             ]
             pygame.draw.polygon(surface, light, inner_points)
 
+class ShockwaveEffect:
+    """Expanding multi-ring shockwave drawn at the point of a lethal collision.
+
+    Plays at the death screen's 15-fps tick rate.  Four rings erupt with
+    staggered delays and shift from white → yellow → orange → red, giving
+    a clear 'impact here' read without obscuring the frozen game frame.
+    """
+
+    _RINGS = [
+        # (start_tick, color,                lifespan)
+        (0,  (255, 255, 255), 22),   # white
+        (5,  (255, 230,  80), 22),   # yellow
+        (10, (255, 130,  30), 22),   # orange
+        (15, (210,  40,  40), 22),   # red
+    ]
+    GROWTH_RATE  = 4.5   # px per tick
+    FLASH_RADIUS = 10    # px — solid centre burst
+    FLASH_LIFE   = 7     # ticks the centre burst lasts
+
+    def __init__(self, cx, cy):
+        self.cx   = cx
+        self.cy   = cy
+        self.tick = 0
+        self._total = max(d + ls for d, _, ls in self._RINGS)
+
+    @property
+    def done(self):
+        return self.tick >= self._total
+
+    def update(self):
+        self.tick += 1
+
+    def draw(self, surface):
+        # Solid centre flash
+        if self.tick < self.FLASH_LIFE:
+            alpha = int(220 * (1.0 - self.tick / self.FLASH_LIFE))
+            r = self.FLASH_RADIUS
+            s = pygame.Surface((r * 2, r * 2), pygame.SRCALPHA)
+            pygame.draw.circle(s, (255, 255, 255, alpha), (r, r), r)
+            surface.blit(s, (self.cx - r, self.cy - r))
+
+        # Expanding rings
+        for delay, color, lifespan in self._RINGS:
+            ring_tick = self.tick - delay
+            if ring_tick < 0 or ring_tick >= lifespan:
+                continue
+            progress = ring_tick / lifespan
+            radius   = max(1, int(ring_tick * self.GROWTH_RATE + 5))
+            alpha    = int(255 * (1.0 - progress))
+            lw       = max(1, round(3 * (1.0 - progress * 0.6)))
+            diam     = radius * 2 + lw * 2 + 4
+            s = pygame.Surface((diam, diam), pygame.SRCALPHA)
+            pygame.draw.circle(s, (*color, alpha), (diam // 2, diam // 2), radius, lw)
+            surface.blit(s, (self.cx - diam // 2, self.cy - diam // 2))
+
+
 class Particle:
     """Represents a single particle in a particle effect"""
     def __init__(self, x, y):

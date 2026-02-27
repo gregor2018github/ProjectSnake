@@ -8,7 +8,7 @@ from time import sleep
 import constants as C
 import high_scores as hs
 import magic_apple_logic as mal
-from game_objects import Snake, Apple, MagicApple, Obstacle, MovingObstacle, ParticleEffect, OrthogonalMovingObstacle, SeekerObstacle, BuffAnnouncement
+from game_objects import Snake, Apple, MagicApple, Obstacle, MovingObstacle, ParticleEffect, OrthogonalMovingObstacle, SeekerObstacle, BuffAnnouncement, ShockwaveEffect
 from screen import Screen
 
 class Game:
@@ -359,6 +359,10 @@ class Game:
         if do_move:
             if not self.snake.move(ghost='ghost_mode' in self.active_buffs):
                 head = self.snake.get_head_position()
+                self.death_pos = (
+                    head[0] * C.GRID_SIZE + C.GRID_SIZE // 2,
+                    head[1] * C.GRID_SIZE + C.GRID_SIZE // 2,
+                )
                 if head in self.snake.positions[1:]:
                     if self.bite_self_sound:
                         self.bite_self_sound.play()
@@ -470,13 +474,23 @@ class Game:
 
         # Snake hitting static obstacles (bypassed during ghost_mode)
         if 'ghost_mode' not in self.active_buffs:
-            if self.snake.collides_with_obstacles(self.obstacles):
-                self._apply_obstacle_death()
+            for ob in self.obstacles:
+                if self.snake.collides_with_rect(ob.rect):
+                    self.death_pos = (
+                        ob.x * C.GRID_SIZE + C.GRID_SIZE // 2,
+                        ob.y * C.GRID_SIZE + C.GRID_SIZE // 2,
+                    )
+                    self._apply_obstacle_death()
+                    break
 
         # Snake head hitting moving obstacles (bypassed during ghost_mode)
         if 'ghost_mode' not in self.active_buffs and self.running:
             for moving_obstacle in self.moving_obstacles:
                 if moving_obstacle.collides_with_snake_head(self.snake):
+                    self.death_pos = (
+                        int(moving_obstacle.float_x * C.GRID_SIZE + C.GRID_SIZE // 2),
+                        int(moving_obstacle.float_y * C.GRID_SIZE + C.GRID_SIZE // 2),
+                    )
                     self._apply_obstacle_death()
                     break
 
@@ -560,6 +574,7 @@ class Game:
         prompt = f"High Score! Enter Name (max {C.MAX_NAME_LENGTH}):"
 
         while input_active and self.running:
+            self.clock.tick(30)  # cap at 30 fps so the blinking cursor redraws smoothly
             self.screen.clear()
             self.screen.draw_overlay()
             self.screen.draw_game_over_message(self.score)
@@ -653,18 +668,23 @@ class Game:
         self.screen.update()
         waiting_for_input = True
         static_background = self.screen.surface.copy() # save the current visuals to rerender it
+        shockwave = ShockwaveEffect(*self.death_pos) if self.death_pos else None
         while waiting_for_input:
             self.clock.tick(15)  # Lower tick rate for game over screen
             # reprint the last screen
             self.screen.surface.blit(static_background, (0, 0))
+            # shockwave at the point of death
+            if shockwave and not shockwave.done:
+                shockwave.update()
+                shockwave.draw(self.screen.surface)
             # display the joke text
             self.screen.draw_message_at_x_y(joke_text, current_text_width, current_text_height, 20)
-            
+
             # change position for next frame
             if text_height_start < C.SCREEN_HEIGHT/2: # sometimes text goes up, sometimes down, depending on where it starts
                 current_text_height += 1
             else:
-                current_text_height -= 1     
+                current_text_height -= 1
             current_text_width += 1 # text always goes towards the right
             self.screen.update()
 
@@ -777,6 +797,7 @@ class Game:
         self.removing_orthogonal_obstacles = False
         self.removing_diagonal_obstacles = False
         self.removing_seeker_obstacles = False
+        self.death_pos = None   # screen-pixel (cx, cy) of the object that killed the snake
         self.running = True
         self._apply_start_level()
 
