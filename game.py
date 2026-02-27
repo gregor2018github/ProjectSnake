@@ -8,7 +8,7 @@ from time import sleep
 import constants as C
 import high_scores as hs
 import magic_apple_logic as mal
-from game_objects import Snake, Apple, MagicApple, Obstacle, MovingObstacle, ParticleEffect, OrthogonalMovingObstacle, BuffAnnouncement
+from game_objects import Snake, Apple, MagicApple, Obstacle, MovingObstacle, ParticleEffect, OrthogonalMovingObstacle, SeekerObstacle, BuffAnnouncement
 from screen import Screen
 
 class Game:
@@ -20,7 +20,7 @@ class Game:
         self.clock = pygame.time.Clock()
         self.high_scores = hs.load_high_scores() # Uses function from high_scores.py
         self.test_buff = test_buff   # if set, force this magic apple type after the 1st apple
-        self.start_level = max(1, min(start_level, 4))  # clamped to valid range
+        self.start_level = max(1, min(start_level, 5))  # clamped to valid range
         self.gameover = False
 
         # Initialize sound attributes to None
@@ -79,10 +79,11 @@ class Game:
             2: C.LEVEL_2_APPLES,
             3: C.LEVEL_3_APPLES,
             4: C.LEVEL_4_APPLES,
+            5: C.LEVEL_5_APPLES,
         }
         self.level = self.start_level
         self.max_level_reached = self.start_level
-        self.apples_eaten = level_thresholds.get(self.start_level, C.LEVEL_4_APPLES)
+        self.apples_eaten = level_thresholds.get(self.start_level, C.LEVEL_5_APPLES)
 
         # Spawn a small representative set of obstacles for immediate level feel
         if self.start_level == 2:
@@ -95,7 +96,13 @@ class Game:
                 self._add_obstacle("diagonal")
         elif self.start_level == 4:
             for _ in range(4):
+                self._add_obstacle("seeker")
+        elif self.start_level == 5:
+            for _ in range(2):
+                self._add_obstacle("seeker")
+            for _ in range(2):
                 self._add_obstacle("diagonal")
+            self._add_obstacle("orthogonal")
 
     def _get_occupied_positions(self):
         """ Returns a list of grid coordinates occupied by the snake and obstacles. """
@@ -147,9 +154,10 @@ class Game:
         """
         # Map obstacle types to their classes and effect types
         obstacle_map = {
-            "static": {"class": Obstacle, "effect_type": "obstacle_static", "list": self.obstacles},
-            "orthogonal": {"class": OrthogonalMovingObstacle, "effect_type": "obstacle_orthogonal", "list": self.moving_obstacles},
-            "diagonal": {"class": MovingObstacle, "effect_type": "obstacle_diagonal", "list": self.moving_obstacles}
+            "static":     {"class": Obstacle,                    "effect_type": "obstacle_static",     "list": self.obstacles},
+            "orthogonal": {"class": OrthogonalMovingObstacle,   "effect_type": "obstacle_orthogonal", "list": self.moving_obstacles},
+            "diagonal":   {"class": MovingObstacle,              "effect_type": "obstacle_diagonal",   "list": self.moving_obstacles},
+            "seeker":     {"class": SeekerObstacle,              "effect_type": "obstacle_seeker",     "list": self.moving_obstacles},
         }
         
         # Get the corresponding settings for this obstacle type
@@ -199,6 +207,10 @@ class Game:
             self.level = 4
             self.max_level_reached = 4
             self.removing_diagonal_obstacles = True
+        elif self.level == 4 and self.apples_eaten >= C.LEVEL_5_APPLES:
+            self.level = 5
+            self.max_level_reached = 5
+            self.removing_seeker_obstacles = True
 
     def _update_mechanics_and_objects(self):
         """Updates mechanics, basically a collection folder for everything that must be checked."""
@@ -229,8 +241,10 @@ class Game:
         
         # Handle diagonal obstacle removal with dust particles
         if hasattr(self, 'removing_diagonal_obstacles') and self.removing_diagonal_obstacles and self.frame_counter % C.MOVING_OBSTACLE_REMOVAL_INTERVAL == 0:
-            diagonal_obstacles = [obstacle for obstacle in self.moving_obstacles 
-                                if isinstance(obstacle, MovingObstacle) and not isinstance(obstacle, OrthogonalMovingObstacle)]
+            diagonal_obstacles = [obstacle for obstacle in self.moving_obstacles
+                                  if isinstance(obstacle, MovingObstacle)
+                                  and not isinstance(obstacle, OrthogonalMovingObstacle)
+                                  and not isinstance(obstacle, SeekerObstacle)]
             if diagonal_obstacles:
                 # Remove the first diagonal obstacle
                 obstacle_to_remove = diagonal_obstacles[0]
@@ -242,6 +256,18 @@ class Game:
                 self.particle_effects.append(ParticleEffect(obstacle_to_remove.x, obstacle_to_remove.y, "obstacle_diagonal", is_spawning=False))
             else:
                 self.removing_diagonal_obstacles = False
+
+        # Handle seeker obstacle removal with dust particles (transition 4 → 5)
+        if hasattr(self, 'removing_seeker_obstacles') and self.removing_seeker_obstacles and self.frame_counter % C.MOVING_OBSTACLE_REMOVAL_INTERVAL == 0:
+            seeker_obstacles = [ob for ob in self.moving_obstacles if isinstance(ob, SeekerObstacle)]
+            if seeker_obstacles:
+                obstacle_to_remove = seeker_obstacles[0]
+                self.moving_obstacles.remove(obstacle_to_remove)
+                if self.remove_obstacle_sound:
+                    self.remove_obstacle_sound.play()
+                self.particle_effects.append(ParticleEffect(int(obstacle_to_remove.float_x), int(obstacle_to_remove.float_y), "obstacle_seeker", is_spawning=False))
+            else:
+                self.removing_seeker_obstacles = False
                 
         # Update moving obstacles (frozen during freeze_obstacles buff)
         if 'freeze_obstacles' not in self.active_buffs:
@@ -266,7 +292,12 @@ class Game:
                 mob.lifespan -= 1
                 if mob.lifespan <= 0:
                     self.moving_obstacles.remove(mob)
-                    effect_type = "obstacle_orthogonal" if isinstance(mob, OrthogonalMovingObstacle) else "obstacle_diagonal"
+                    if isinstance(mob, SeekerObstacle):
+                        effect_type = "obstacle_seeker"
+                    elif isinstance(mob, OrthogonalMovingObstacle):
+                        effect_type = "obstacle_orthogonal"
+                    else:
+                        effect_type = "obstacle_diagonal"
                     self.particle_effects.append(ParticleEffect(int(mob.float_x), int(mob.float_y), effect_type, is_spawning=False))
 
         # Increment frame counter
@@ -403,6 +434,10 @@ class Game:
                 self._add_obstacle("orthogonal")
             elif self.level == 3:
                 self._add_obstacle("diagonal")
+            elif self.level == 4:
+                self._add_obstacle("seeker")
+            elif self.level == 5:
+                self._add_obstacle(random.choice(["static", "orthogonal", "diagonal", "seeker"]))
 
             # Respawn apple, ensuring it's not on the snake or obstacles
             self.apple.respawn(self._get_occupied_positions())
@@ -741,6 +776,7 @@ class Game:
         self.removing_static_obstacles = False
         self.removing_orthogonal_obstacles = False
         self.removing_diagonal_obstacles = False
+        self.removing_seeker_obstacles = False
         self.running = True
         self._apply_start_level()
 

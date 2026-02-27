@@ -20,6 +20,7 @@ PARTICLE_COLORS_APPLE = [(255, 0, 0), (255, 50, 0), (255, 20, 20)]  # Variations
 PARTICLE_COLORS_OBSTACLE_STATIC = [(130, 130, 130), (160, 160, 160), (100, 100, 100)]  # Gray variations
 PARTICLE_COLORS_OBSTACLE_ORTHOGONAL = [(220, 120, 60), (240, 140, 80), (200, 100, 40)]  # Orange variations
 PARTICLE_COLORS_OBSTACLE_DIAGONAL = [(150, 110, 200), (170, 130, 220), (130, 90, 180)]  # Purple variations
+PARTICLE_COLORS_OBSTACLE_SEEKER = [(210, 55, 55), (235, 80, 60), (185, 35, 35)]         # Crimson red variations
 
 # Circular Pulse Effect Constants
 PULSE_MIN_RADIUS = 3
@@ -32,7 +33,8 @@ PULSE_COUNT = 3  # Number of pulse circles per effect
 # Level System Constants
 LEVEL_2_APPLES = 10   # normal apples eaten to reach level 2
 LEVEL_3_APPLES = 20   # normal apples eaten to reach level 3
-LEVEL_4_APPLES = 35   # normal apples eaten to reach level 4
+LEVEL_4_APPLES = 35   # normal apples eaten to reach level 4 (seeker enemies)
+LEVEL_5_APPLES = 55   # normal apples eaten to reach the end-level (all types spawn randomly)
 OBSTACLE_REMOVAL_INTERVAL = 4 # every x ticks one obstacle is removed
 MOVING_OBSTACLE_REMOVAL_INTERVAL = 4 # ticks between removing orthogonal obstacles
 
@@ -103,10 +105,13 @@ MIN_OBSTACLE_SPAWN_DISTANCE = 5  # Minimum distance from the snake head to spawn
 
 # Moving Obstacle Constants
 MOVING_OBSTACLE_USE_FLOAT_COLLISION = True # Set to True for smooth snake/moving_obstacle collision
-MOVING_OBSTACLE_COLOR_DIAGONAL = (150, 110, 200)  # Brighter purple for diagonal obstacles
+MOVING_OBSTACLE_COLOR_DIAGONAL = (150, 110, 200)   # Brighter purple for diagonal obstacles
 MOVING_OBSTACLE_COLOR_ORTHOGONAL = (220, 120, 60)  # Orange-amber for orthogonal obstacles
+MOVING_OBSTACLE_COLOR_SEEKER = (210, 55, 55)       # Crimson red for homing seeker obstacles
 MOVING_OBSTACLE_SIZE = (GRID_SIZE, GRID_SIZE)
-MOVING_OBSTACLE_SPEED = 0.1  # Grid cells per frame
+MOVING_OBSTACLE_SPEED = 0.1   # Grid cells per frame
+SEEKER_OBSTACLE_SPEED = 0.12  # Slightly faster than regular moving obstacles
+SEEKER_TURN_RATE = 0.04       # Fraction of direction corrected toward snake per tick
 
 # Sound Constants
 SOUND_FOLDER = os.path.join("Files", "Sound")

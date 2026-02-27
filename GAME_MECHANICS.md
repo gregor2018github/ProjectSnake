@@ -17,9 +17,10 @@ obstacle type is gradually removed one-by-one at a fixed interval
 | 1 | Start | Static block (`Obstacle`) | Gray |
 | 2 | 10 apples | Orthogonal mover (`OrthogonalMovingObstacle`) | Orange |
 | 3 | 20 apples | Diagonal mover (`MovingObstacle`) | Purple |
-| 4 | 35 apples | — nothing new — | — |
+| 4 | 35 apples | Seeker (`SeekerObstacle`) | Crimson red |
+| 5 (End) | 55 apples | Random — any of the four types above | Mixed |
 
-**Level 4 has no ceiling.** The game runs indefinitely without enemies. Still eeds to get adjusted.
+**Level 5 is the end-level / endless mode.** Each apple eaten spawns one random obstacle type chosen from all four types. Old seekers are gradually removed on the 4→5 transition, then the chaos begins.
 
 ### Obstacle behavior
 
@@ -28,6 +29,9 @@ obstacle type is gradually removed one-by-one at a fixed interval
 | `Obstacle` | None (static) | Head kill (unless ghost/shield) | — |
 | `OrthogonalMovingObstacle` | One axis only (float) | Head kill | Walls, snake body, static obstacles |
 | `MovingObstacle` (diagonal) | Both axes (float) | Head kill | Walls, snake body, static obstacles |
+| `SeekerObstacle` | Float, steers toward snake head each tick | Head kill | Walls, snake body, static obstacles |
+
+`SeekerObstacle` extends `MovingObstacle`. Each tick it blends its current velocity 4 % (`SEEKER_TURN_RATE`) toward the unit vector pointing at the snake head, then re-normalises to `SEEKER_OBSTACLE_SPEED` (0.12). This gives it a gradual arc rather than an instant lock-on. Drawn as a crimson diamond.
 
 Moving obstacles use **float sub-grid positions** for smooth movement and bounce
 physics. Collision with the snake *head* kills; collision with the *body* bounces

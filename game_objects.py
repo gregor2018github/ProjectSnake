@@ -359,6 +359,70 @@ class OrthogonalMovingObstacle(MovingObstacle):
             self.dy = random.choice([-1, 1]) * speed
             self.dx = 0
 
+
+class SeekerObstacle(MovingObstacle):
+    """A homing obstacle that slowly steers toward the snake head each tick.
+
+    Moves slightly faster than regular moving obstacles but corrects its
+    heading gradually (SEEKER_TURN_RATE), so the player has time to react
+    and outmaneuver it.  Drawn as a diamond to distinguish it visually.
+    """
+
+    def __init__(self, x, y):
+        super().__init__(x, y)
+        self.color = C.MOVING_OBSTACLE_COLOR_SEEKER
+        # Start with a random direction at seeker speed
+        angle = random.uniform(0, 2 * math.pi)
+        spd = C.SEEKER_OBSTACLE_SPEED
+        self.dx = math.cos(angle) * spd
+        self.dy = math.sin(angle) * spd
+
+    def update(self, snake, obstacles):
+        # Nudge velocity toward the snake head before moving
+        head_x, head_y = snake.get_head_position()
+        tx = head_x - self.float_x
+        ty = head_y - self.float_y
+        dist = math.sqrt(tx * tx + ty * ty)
+        if dist > 0:
+            spd = C.SEEKER_OBSTACLE_SPEED
+            target_dx = (tx / dist) * spd
+            target_dy = (ty / dist) * spd
+            turn = C.SEEKER_TURN_RATE
+            self.dx += (target_dx - self.dx) * turn
+            self.dy += (target_dy - self.dy) * turn
+            # Re-normalise so speed stays constant despite blending
+            cur_spd = math.sqrt(self.dx ** 2 + self.dy ** 2)
+            if cur_spd > 0:
+                self.dx = (self.dx / cur_spd) * spd
+                self.dy = (self.dy / cur_spd) * spd
+        # Delegate movement and collision physics to parent
+        super().update(snake, obstacles)
+
+    def draw(self, surface):
+        """Draw as a crimson diamond to visually distinguish from square obstacles."""
+        screen_x = self.float_x * C.GRID_SIZE
+        screen_y = self.float_y * C.GRID_SIZE
+        cx = int(screen_x + self.width / 2)
+        cy = int(screen_y + self.height / 2)
+        half = self.width // 2 - 1
+        points = [
+            (cx,        cy - half),  # top
+            (cx + half, cy),          # right
+            (cx,        cy + half),  # bottom
+            (cx - half, cy),          # left
+        ]
+        pygame.draw.polygon(surface, self.color, points)
+        light = tuple(min(c + 45, 255) for c in self.color)
+        inner_half = half - 3
+        if inner_half > 0:
+            inner_points = [
+                (cx,              cy - inner_half),
+                (cx + inner_half, cy),
+                (cx,              cy + inner_half),
+                (cx - inner_half, cy),
+            ]
+            pygame.draw.polygon(surface, light, inner_points)
+
 class Particle:
     """Represents a single particle in a particle effect"""
     def __init__(self, x, y):
@@ -451,13 +515,14 @@ class CirclePulseEffect:
     """Creates an expanding circular pulse effect from the epicentrum"""
     def __init__(self, x, y, effect_type="apple"):
         self.pulses = []
-        
+
         # Choose color palette based on effect type
         color_map = {
             "apple": C.PARTICLE_COLORS_APPLE,
             "obstacle_static": C.PARTICLE_COLORS_OBSTACLE_STATIC,
             "obstacle_orthogonal": C.PARTICLE_COLORS_OBSTACLE_ORTHOGONAL,
-            "obstacle_diagonal": C.PARTICLE_COLORS_OBSTACLE_DIAGONAL
+            "obstacle_diagonal": C.PARTICLE_COLORS_OBSTACLE_DIAGONAL,
+            "obstacle_seeker": C.PARTICLE_COLORS_OBSTACLE_SEEKER,
         }
         
         # Get color palette or default to apple colors
@@ -488,13 +553,14 @@ class ParticleEffect:
         self.particles = []
         self.pulses = None
         self.effect_type = effect_type
-        
+
         # Choose color palette based on effect type
         color_map = {
             "apple": C.PARTICLE_COLORS_APPLE,
             "obstacle_static": C.PARTICLE_COLORS_OBSTACLE_STATIC,
             "obstacle_orthogonal": C.PARTICLE_COLORS_OBSTACLE_ORTHOGONAL,
-            "obstacle_diagonal": C.PARTICLE_COLORS_OBSTACLE_DIAGONAL
+            "obstacle_diagonal": C.PARTICLE_COLORS_OBSTACLE_DIAGONAL,
+            "obstacle_seeker": C.PARTICLE_COLORS_OBSTACLE_SEEKER,
         }
         
         # Get color palette or default to apple colors
