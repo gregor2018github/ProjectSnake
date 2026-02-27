@@ -13,13 +13,14 @@ from screen import Screen
 
 class Game:
     """ Manages the game state and main loop """
-    def __init__(self, test_buff=None):
+    def __init__(self, test_buff=None, start_level=1):
         pygame.init()
         mixer.init() # Initialize the mixer
         self.screen = Screen() # Uses constants defined in screen.py/constants.py
         self.clock = pygame.time.Clock()
         self.high_scores = hs.load_high_scores() # Uses function from high_scores.py
         self.test_buff = test_buff   # if set, force this magic apple type after the 1st apple
+        self.start_level = max(1, min(start_level, 4))  # clamped to valid range
         self.gameover = False
 
         # Initialize sound attributes to None
@@ -65,6 +66,36 @@ class Game:
             print(f"Warning: Could not load remove obstacle sound ({C.REMOVE_OBSTACLE_SOUND_FILE}): {e}")
 
         self.reset()
+
+    def _apply_start_level(self):
+        """Pre-configure game state to match the requested start_level.
+        Sets apples_eaten to the level threshold, updates level tracking,
+        and spawns a small set of representative obstacles so the field
+        immediately reflects that level's difficulty."""
+        if self.start_level <= 1:
+            return
+
+        level_thresholds = {
+            2: C.LEVEL_2_APPLES,
+            3: C.LEVEL_3_APPLES,
+            4: C.LEVEL_4_APPLES,
+        }
+        self.level = self.start_level
+        self.max_level_reached = self.start_level
+        self.apples_eaten = level_thresholds.get(self.start_level, C.LEVEL_4_APPLES)
+
+        # Spawn a small representative set of obstacles for immediate level feel
+        if self.start_level == 2:
+            for _ in range(4):
+                self._add_obstacle("orthogonal")
+        elif self.start_level == 3:
+            for _ in range(3):
+                self._add_obstacle("orthogonal")
+            for _ in range(3):
+                self._add_obstacle("diagonal")
+        elif self.start_level == 4:
+            for _ in range(4):
+                self._add_obstacle("diagonal")
 
     def _get_occupied_positions(self):
         """ Returns a list of grid coordinates occupied by the snake and obstacles. """
@@ -711,6 +742,7 @@ class Game:
         self.removing_orthogonal_obstacles = False
         self.removing_diagonal_obstacles = False
         self.running = True
+        self._apply_start_level()
 
     def run(self):
         """ Starts and runs the main game loop. """
