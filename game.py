@@ -1,5 +1,6 @@
 import pygame
 import random
+import math
 from pygame.locals import *
 from pygame import mixer # Import mixer
 from time import sleep
@@ -273,6 +274,40 @@ class Game:
         if 'freeze_obstacles' not in self.active_buffs:
             for moving_obstacle in self.moving_obstacles:
                 moving_obstacle.update(self.snake, self.obstacles)
+
+            # Soft seeker-seeker bounce: resolve overlaps between seekers
+            seekers = [ob for ob in self.moving_obstacles if isinstance(ob, SeekerObstacle)]
+            for i in range(len(seekers)):
+                for j in range(i + 1, len(seekers)):
+                    s1, s2 = seekers[i], seekers[j]
+                    # Centre positions in grid units
+                    dx = (s1.float_x + 0.5) - (s2.float_x + 0.5)
+                    dy = (s1.float_y + 0.5) - (s2.float_y + 0.5)
+                    dist_sq = dx * dx + dy * dy
+                    if dist_sq >= 1.0 or dist_sq == 0:
+                        continue
+                    dist = math.sqrt(dist_sq)
+                    nx, ny = dx / dist, dy / dist
+                    # Positional correction: push apart to eliminate overlap
+                    push = (1.0 - dist) * 0.5
+                    s1.float_x += nx * push
+                    s1.float_y += ny * push
+                    s2.float_x -= nx * push
+                    s2.float_y -= ny * push
+                    # Velocity impulse along collision normal (only if approaching)
+                    rel_v_n = (s1.dx - s2.dx) * nx + (s1.dy - s2.dy) * ny
+                    if rel_v_n < 0:
+                        impulse = rel_v_n * -0.5   # restitution = 0.4 → soft bounce
+                        s1.dx += impulse * nx
+                        s1.dy += impulse * ny
+                        s2.dx -= impulse * nx
+                        s2.dy -= impulse * ny
+                        # Re-normalise to keep constant seeker speed
+                        for s in (s1, s2):
+                            spd = math.sqrt(s.dx ** 2 + s.dy ** 2)
+                            if spd > 0:
+                                s.dx = (s.dx / spd) * C.SEEKER_OBSTACLE_SPEED
+                                s.dy = (s.dy / spd) * C.SEEKER_OBSTACLE_SPEED
 
         # Update magical apples
         for magic_apple in list(self.magic_apples):

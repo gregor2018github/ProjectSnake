@@ -111,7 +111,8 @@ MOVING_OBSTACLE_COLOR_SEEKER = (210, 55, 55)       # Crimson red for homing seek
 MOVING_OBSTACLE_SIZE = (GRID_SIZE, GRID_SIZE)
 MOVING_OBSTACLE_SPEED = 0.1   # Grid cells per frame
 SEEKER_OBSTACLE_SPEED = 0.12  # Slightly faster than regular moving obstacles
-SEEKER_TURN_RATE = 0.04       # Fraction of direction corrected toward snake per tick
+SEEKER_TURN_RATE_SCALE = 0.60 # Turn rate = SCALE / dist; seeker is passive far away, aggressive up close
+SEEKER_TURN_RATE_MAX  = 0.35  # Cap so the seeker never snap-turns at point-blank range
 
 # Sound Constants
 SOUND_FOLDER = os.path.join("Files", "Sound")

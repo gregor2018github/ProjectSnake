@@ -252,10 +252,6 @@ class MovingObstacle(GameObject):
         current_screen_y = self.float_y * C.GRID_SIZE
         obstacle_rect = pygame.Rect(current_screen_x, current_screen_y, self.width, self.height)
 
-        # Update the integer grid position (rounded down) for other logic if needed
-        new_x = int(self.float_x)
-        new_y = int(self.float_y)
-
         # Handle wall collisions (wrap around or bounce)
         if C.WALL_COLLISION:
             # Bounce off walls
@@ -387,7 +383,8 @@ class SeekerObstacle(MovingObstacle):
             spd = C.SEEKER_OBSTACLE_SPEED
             target_dx = (tx / dist) * spd
             target_dy = (ty / dist) * spd
-            turn = C.SEEKER_TURN_RATE
+            # Turn rate scales with proximity: weak pull from afar, strong lock-on up close
+            turn = min(C.SEEKER_TURN_RATE_MAX, C.SEEKER_TURN_RATE_SCALE / dist)
             self.dx += (target_dx - self.dx) * turn
             self.dy += (target_dy - self.dy) * turn
             # Re-normalise so speed stays constant despite blending
