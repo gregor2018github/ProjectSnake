@@ -386,10 +386,12 @@ class Screen:
     # ------------------------------------------------------------------ stat cards
     def _draw_stat_cards(self, stats, y_top):
         """2 rows x 3 columns of labelled stat cards."""
+        dist = stats['distance']
+        dist_str = f"{dist / 1000:.1f}k cells" if dist >= 1000 else f"{dist} cells"
         cards = [
             ('Peak Size',  f"{stats['max_length']} seg"),
             ('Apples',     str(stats['apples'])),
-            ('Distance',   f"{stats['distance']} cells"),
+            ('Distance',   dist_str),
             ('Power-ups',  str(stats['magic_apples'])),
             ('Survived',   f"{stats['time_ticks'] // 10}s"),
             ('Max Level',  str(stats['max_level'])),

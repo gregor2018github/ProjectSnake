@@ -1,8 +1,6 @@
 # ProjectSnake - TODO List
 
 ## Current Tasks
-- Travel distance in the highscore menu should be fixed, the number overlaps with other text when over 999.
-- Number of powerups in the highscore menu should be fixed, might be off. Needs to be re-tested.
 - When crashing through a diagnonal enemy, it should count as one hit even though it is technically two.
 - A level can only be cleared by going through a particular door.
 - Each individual level has a different background theme (e.g. forest theme, beach theme etc.)
@@ -14,6 +12,7 @@
 - Randomly generate a bonus level with an extra door where the snacke transforms into a rabbit that has to eat carrots. The rabbit is hopping instead of sliding, and the enemies are birds. The rabbit makes jumps of 2 cells instead of 1.
 
 ## Completed Tasks
+- Travel distance stat card now shows "X.Xk cells" for values ≥ 1000 to prevent label overlap.
 - Double points buff duration tripled (100 → 300 ticks).
 - Freeze buff now falls back to a random positive buff when no moving obstacles exist.
 - The seeker enemies should be more precise and go faster towards the head of the snake.
