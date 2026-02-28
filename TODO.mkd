@@ -1,35 +1,46 @@
 # ProjectSnake - TODO List
 
 ## Current Tasks
+- Travel distance in the highscore menu should be fixed, the number overlaps with other text when over 999.
+- Number of powerups in the highscore menu should be fixed, might be off. Needs to be re-tested.
+- When crashing through a diagnonal enemy, it should count as one hit even though it is technically two.
+- A level can only be cleared by going through a particular door.
+- Each individual level has a different background theme (e.g. forest theme, beach theme etc.)
+- The faster you finish a game from entering until exiting, you get a time bonus.
+
 
 ## Backlog
-- [ ] Collect more statistics during playthrough (e.g. longest snake, most apples in a row)
+- Collect more statistics during playthrough (e.g. longest snake, most apples in a row)
+- Randomly generate a bonus level with an extra door where the snacke transforms into a rabbit that has to eat carrots. The rabbit is hopping instead of sliding, and the enemies are birds. The rabbit makes jumps of 2 cells instead of 1.
 
 ## Completed Tasks
-- [x] magic apple where game colors invert (for a certain amount of time)
-- [x] magic apple where snake is not moving automatically anymore, it must be moved manually - for x movements (every movement counts, not time-based)
-- [x] make continue and quit buttons clickable by mouse
-- [x] Ask if player really wants to quit after pressing ESC
-- [x] Initial project setup.
-- [x] Change Apple Removal Particles into something circular around the epicentrum instead of dusk inside the epicentrum
-- [x] Obstacles must spawn with a minimum distance from the snake head
-- [x] Fix bug that snake can bite itself with quick direction changes (e.g., down-left-up)
-- [x] stop the game before it goes to the highscores so player can see where it went wrong
-- [x] Implement game pause functionality
-- [x] Show provocative sentences that appear when player dies
-- [x] Create new item "Magic Apple"
-- [x] Magic apple must automatically despawn after a certain amount of ticks
-- [x] Magic Apple visual lifespan indicator (green→red border)
-- [x] Levels now progress by apples eaten (not score): L2=10, L3=20, L4=35
-- [x] Magic apple buffs implemented: Speed+, Slow, Ghost mode, No-Grow
-- [x] Extended magic apple buffs: Double Score, Freeze Obstacles, Shrink, Shield
-- [x] Buff announcement popup when magic apple is eaten
-- [x] Redesigned death screen with ripple animation and stat cards
-- [x] 4 random magic sounds play when magic apple is eaten
-- [x] Active buff HUD shown in top-right corner during gameplay
-- [x] Run stats (apples eaten, time, max level) shown on death screen
-- [x] Fix bite-self sound missing None-guard (magic_apple_eat_sound)
-- [x] Magic apple that spawns 5 random enemies that despawn after 100 ticks
+- Double points buff duration tripled (100 → 300 ticks).
+- Freeze buff now falls back to a random positive buff when no moving obstacles exist.
+- The seeker enemies should be more precise and go faster towards the head of the snake.
+- magic apple where game colors invert (for a certain amount of time)
+- magic apple where snake is not moving automatically anymore, it must be moved manually - for x movements (every movement counts, not time-based)
+- make continue and quit buttons clickable by mouse
+- Ask if player really wants to quit after pressing ESC
+- Initial project setup.
+- Change Apple Removal Particles into something circular around the epicentrum instead of dusk inside the epicentrum
+- Obstacles must spawn with a minimum distance from the snake head
+- Fix bug that snake can bite itself with quick direction changes (e.g., down-left-up)
+- stop the game before it goes to the highscores so player can see where it went wrong
+- Implement game pause functionality
+- Show provocative sentences that appear when player dies
+- Create new item "Magic Apple"
+- Magic apple must automatically despawn after a certain amount of ticks
+- Magic Apple visual lifespan indicator (green→red border)
+- Levels now progress by apples eaten (not score): L2=10, L3=20, L4=35
+- Magic apple buffs implemented: Speed+, Slow, Ghost mode, No-Grow
+- Extended magic apple buffs: Double Score, Freeze Obstacles, Shrink, Shield
+- Buff announcement popup when magic apple is eaten
+- Redesigned death screen with ripple animation and stat cards
+- 4 random magic sounds play when magic apple is eaten
+- Active buff HUD shown in top-right corner during gameplay
+- Run stats (apples eaten, time, max level) shown on death screen
+- Fix bite-self sound missing None-guard (magic_apple_eat_sound)
+- Magic apple that spawns 5 random enemies that despawn after 100 ticks
 
 ---
 

@@ -35,7 +35,14 @@ def double_score(game):
 
 
 def freeze_obstacles(game):
-    """All moving obstacles stop moving for a limited time."""
+    """All moving obstacles stop moving for a limited time.
+    If no moving obstacles exist, grants a random alternative buff instead."""
+    if not game.moving_obstacles:
+        _fallback = random.choice([
+            "ghost_mode", "no_grow", "double_score", "shield", "decrease_tick_speed"
+        ])
+        globals()[_fallback](game)
+        return
     game.active_buffs['freeze_obstacles'] = C.BUFF_DURATION_FREEZE
 
 
