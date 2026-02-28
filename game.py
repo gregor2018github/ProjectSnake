@@ -335,6 +335,11 @@ class Game:
                         effect_type = "obstacle_diagonal"
                     self.particle_effects.append(ParticleEffect(int(mob.float_x), int(mob.float_y), effect_type, is_spawning=False))
 
+        # Tick per-obstacle hit cooldowns (prevents multi-charge drain on a single pass-through)
+        self.obstacle_hit_cooldowns = {
+            ob: v - 1 for ob, v in self.obstacle_hit_cooldowns.items() if v > 1
+        }
+
         # Increment frame counter
         self.frame_counter += 1
 
@@ -510,23 +515,31 @@ class Game:
         # Snake hitting static obstacles (bypassed during ghost_mode)
         if 'ghost_mode' not in self.active_buffs:
             for ob in self.obstacles:
+                if ob in self.obstacle_hit_cooldowns:
+                    continue
                 if self.snake.collides_with_rect(ob.rect):
                     self.death_pos = (
                         ob.x * C.GRID_SIZE + C.GRID_SIZE // 2,
                         ob.y * C.GRID_SIZE + C.GRID_SIZE // 2,
                     )
                     self._apply_obstacle_death()
+                    if self.running:  # hit absorbed – start cooldown
+                        self.obstacle_hit_cooldowns[ob] = C.OBSTACLE_HIT_COOLDOWN
                     break
 
         # Snake head hitting moving obstacles (bypassed during ghost_mode)
         if 'ghost_mode' not in self.active_buffs and self.running:
             for moving_obstacle in self.moving_obstacles:
+                if moving_obstacle in self.obstacle_hit_cooldowns:
+                    continue
                 if moving_obstacle.collides_with_snake_head(self.snake):
                     self.death_pos = (
                         int(moving_obstacle.float_x * C.GRID_SIZE + C.GRID_SIZE // 2),
                         int(moving_obstacle.float_y * C.GRID_SIZE + C.GRID_SIZE // 2),
                     )
                     self._apply_obstacle_death()
+                    if self.running:  # hit absorbed – start cooldown
+                        self.obstacle_hit_cooldowns[moving_obstacle] = C.OBSTACLE_HIT_COOLDOWN
                     break
 
     def draw(self):
@@ -833,6 +846,7 @@ class Game:
         self.removing_diagonal_obstacles = False
         self.removing_seeker_obstacles = False
         self.death_pos = None   # screen-pixel (cx, cy) of the object that killed the snake
+        self.obstacle_hit_cooldowns = {}  # obstacle -> ticks until same obstacle can hit again
         self.running = True
         self._apply_start_level()
 

@@ -102,6 +102,7 @@ BUFF_DISPLAY_NAMES = {
 OBSTACLE_COLOR = (100, 100, 100)  # Gray
 OBSTACLE_SIZE = (GRID_SIZE, GRID_SIZE)
 MIN_OBSTACLE_SPAWN_DISTANCE = 5  # Minimum distance from the snake head to spawn obstacles
+OBSTACLE_HIT_COOLDOWN = 6       # Ticks before the same obstacle can drain another shield charge
 
 # Moving Obstacle Constants
 MOVING_OBSTACLE_USE_FLOAT_COLLISION = True # Set to True for smooth snake/moving_obstacle collision
