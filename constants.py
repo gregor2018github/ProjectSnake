@@ -112,6 +112,8 @@ OBSTACLE_SHAPES = [
     [(0, 1), (1, 0), (1, 1)],         # L bottom-right
     [(0, 0), (0, 1), (1, 1)],         # L bottom-left
 ]
+# Relative weights for each shape above: single blocks most common, 3-cell least common
+OBSTACLE_SHAPE_WEIGHTS = [6, 3, 3, 1, 1, 1, 1]
 MIN_OBSTACLE_SPAWN_DISTANCE = 5  # Minimum distance from the snake head to spawn obstacles
 OBSTACLE_HIT_COOLDOWN = 6       # Ticks before the same obstacle can drain another shield charge
 

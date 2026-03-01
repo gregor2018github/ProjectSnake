@@ -181,7 +181,7 @@ class Game:
             head_x, head_y = self.snake.get_head_position()
 
             if use_shapes:
-                shape = random.choice(C.OBSTACLE_SHAPES)
+                shape = random.choices(C.OBSTACLE_SHAPES, weights=C.OBSTACLE_SHAPE_WEIGHTS, k=1)[0]
                 all_cells = [(x + dx, y + dy) for (dx, dy) in shape]
                 valid = all(
                     0 <= cx < C.GRID_WIDTH and 0 <= cy < C.GRID_HEIGHT
@@ -880,7 +880,6 @@ class Game:
     
     def wait_for_continue_after_death(self):
         """Game pauses and awaits 'Space'. Other buttons cannot be pressed. In the meantime a random joke sentence will pass over the screen."""
-        self._start_menu_music()
         # chose random joke from the death message list
         joke_text = random.choice(C.Death_Messages)
         text_height_start = random.randint(50, C.SCREEN_HEIGHT-100)
@@ -925,6 +924,7 @@ class Game:
                     if event.key == K_SPACE:
                         waiting_for_input = False  # Exit waiting loop
                         self.running = True  # Ensure game continues
+                        self._start_menu_music()
 
     def game_over(self):
         """ Handles the game over sequence, including high score check and restart prompt. """
