@@ -605,6 +605,7 @@ class Game:
 
     def _apply_obstacle_death(self):
         """Handle an obstacle collision: absorb one shield charge or die."""
+        self.current_streak = 0
         if 'shield' in self.active_buffs:
             self.active_buffs['shield'] -= 1
             if self.active_buffs['shield'] == 0:
@@ -630,6 +631,9 @@ class Game:
             base_score = 2 if 'double_score' in self.active_buffs else 1
             self.score += base_score * combo_mult
             self.apples_eaten += 1
+            self.current_streak += 1
+            if self.current_streak > self.longest_streak:
+                self.longest_streak = self.current_streak
             if 'no_grow' not in self.active_buffs:
                 self.snake.grow()
             if self.apple_eat_sound:
@@ -834,8 +838,32 @@ class Game:
         return player_name if player_name else "Anonymous" # Default name if empty
 
     def pause_game(self):
-        """Pauses the game and waits for player input to continue."""
-        self.wait_for_continue()
+        """Pauses the game, shows live stats overlay, and waits for SPACE to resume."""
+        snapshot = self.screen.surface.copy()
+        tick = 0
+        while True:
+            self.clock.tick(20)
+            self.screen.surface.blit(snapshot, (0, 0))
+            playtime_s   = self.time_alive // C.SNAKE_SPEED_INITIAL
+            snake_length = len(self.snake.positions)
+            self.screen.draw_pause_stats(
+                playtime_s, snake_length,
+                self.apples_eaten, self.magic_apples_eaten,
+                self.distance_traveled, self.longest_streak, tick
+            )
+            self.screen.update()
+            tick += 1
+            for event in pygame.event.get():
+                if event.type == QUIT:
+                    self.running = False
+                    return
+                if event.type == KEYDOWN:
+                    if event.key == K_SPACE:
+                        return
+                    if event.key == K_ESCAPE:
+                        self.confirm_quit()
+                        if not self.running:
+                            return
 
     def confirm_quit(self):
         """Show a quit-confirmation dialog; quit only if ESC is pressed again."""
@@ -1028,6 +1056,8 @@ class Game:
         self.combo_count = 0       # consecutive apples eaten within the COMBO_WINDOW
         self.combo_timer = 0       # ticks remaining before the combo chain breaks
         self.max_combo = 0         # highest combo_count reached this run
+        self.current_streak = 0    # apples eaten since last obstacle hit
+        self.longest_streak = 0    # highest current_streak reached this run
         self.removing_static_obstacles = False
         self.removing_orthogonal_obstacles = False
         self.removing_diagonal_obstacles = False

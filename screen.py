@@ -299,6 +299,48 @@ class Screen:
         self.surface.blit(surf, surf.get_rect(center=(x, y)))
 
     # ------------------------------------------------------------------ quit confirm
+    def draw_pause_stats(self, playtime_s, snake_length, apples, magic_apples, cells, longest_streak, tick):
+        """Overlay shown while the game is paused. Displays live run statistics."""
+        cx, cy = C.SCREEN_WIDTH // 2, C.SCREEN_HEIGHT // 2
+
+        self.draw_overlay(alpha=170)
+
+        rows = [
+            ('Playtime',           f'{playtime_s}s'),
+            ('Snake Length',       str(snake_length)),
+            ('Apples Eaten',       str(apples)),
+            ('Magic Apples Eaten', str(magic_apples)),
+            ('Cells Traveled',     str(cells)),
+            ('Longest Streak',     str(longest_streak)),
+        ]
+        row_h = 28
+        panel_h = 52 + len(rows) * row_h + 28  # title + rows + hint
+        panel_w = 310
+        panel = pygame.Rect(cx - panel_w // 2, cy - panel_h // 2, panel_w, panel_h)
+        self._panel(panel, (10, 10, 28, 245), C.PANEL_BORDER_COLOR)
+
+        # Title
+        pulse = int(180 + 60 * math.sin(tick * 0.15))
+        self._shadow_text(self.score_font, 'PAUSED', (pulse, pulse, 255), (cx, panel.top + 22))
+
+        # Stat rows
+        label_x = cx - 90
+        value_x = cx + 90
+        y = panel.top + 50
+        for label, value in rows:
+            lsurf = self.prompt_font.render(label, True, (180, 180, 200))
+            vsurf = self.prompt_font.render(value, True, C.TEXT_COLOR)
+            self.surface.blit(lsurf, lsurf.get_rect(midleft=(label_x, y + row_h // 2)))
+            self.surface.blit(vsurf, vsurf.get_rect(midright=(value_x, y + row_h // 2)))
+            pygame.draw.line(self.surface, (40, 40, 60),
+                             (panel.left + 12, y + row_h - 1),
+                             (panel.right - 12, y + row_h - 1))
+            y += row_h
+
+        # Hint
+        hint = self.prompt_font.render('SPACE  –  Resume', True, (100, 200, 100))
+        self.surface.blit(hint, hint.get_rect(center=(cx, panel.bottom - 14)))
+
     def draw_quit_confirm(self, tick):
         """Overlay asking the player to confirm quitting. Returns nothing."""
         cx, cy = C.SCREEN_WIDTH // 2, C.SCREEN_HEIGHT // 2
