@@ -1,8 +1,8 @@
 # ProjectSnake - TODO List
 
 ## Current Tasks
-- add a sound when snake enters the portal - whooshing sound
-- add a sound when being in the menus (e.g. level clear, death screen) - it must softly blind out when the game starts again
+- increase difficulty of level one - obstacles can be 1-3 blocks big, with different shapes (L-shaped, square-shaped), also instead of 10 apples to clear the level, make it 15
+- increase difficulty of level two - obstacles can be 1-3 blocks big, with different shapes (L-shaped, square-shaped), also increase the apple count to clear the level by 5 (total 20)
 - Each individual level has a different background theme (e.g. forest theme, beach theme etc.)
 
 
@@ -11,6 +11,8 @@
 - Randomly generate a bonus level with an extra door where the snacke transforms into a rabbit that has to eat carrots. The rabbit is hopping instead of sliding, and the enemies are birds. The rabbit makes jumps of 2 cells instead of 1.
 
 ## Completed Tasks
+- Whoosh sound plays when snake's head enters the exit portal.
+- Menu music (looping) plays on death screen and level-clear screen; fades out over 1.5s when gameplay resumes.
 - Portal spawns immediately when obstacle despawning begins (no wait time after last apple).
 - Snake speeds up significantly when its head enters the exit portal.
 - Apple flash on level-clear fixed: level-up check runs immediately after apple eaten so apple_visible=False before draw().

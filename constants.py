@@ -146,6 +146,10 @@ MAGIC_APPLE_EAT_SOUND_FILES = [
 BITE_SELF_SOUND_FILE = get_sound_file_path(SOUND_FOLDER, "bite-self.wav")
 BITE_OBSTACLE_SOUND_FILE = get_sound_file_path(SOUND_FOLDER, "bite-obstacle.wav")
 REMOVE_OBSTACLE_SOUND_FILE = get_sound_file_path(SOUND_FOLDER, "remove-obstacle.wav")
+WHOOSH_SOUND_FILE = get_sound_file_path(SOUND_FOLDER, "whoosh.mp3")
+MENU_MUSIC_FILE   = get_sound_file_path(SOUND_FOLDER, "menu_music.mp3")
+MENU_MUSIC_VOLUME     = 0.5
+MENU_MUSIC_FADEOUT_MS = 1500   # ms for menu music to fade when gameplay resumes
 
 # Death-screen wave animation
 WAVE_SPAWN_INTERVAL = 70    # frames between new ripple waves

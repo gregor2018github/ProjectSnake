@@ -31,6 +31,7 @@ class Game:
         self.bite_self_sound = None
         self.bite_obstacle_sound = None
         self.remove_obstacle_sound = None
+        self.whoosh_sound = None
         self.next_direction = None # Buffer for the next direction change
 
         # Load sound effects individually
@@ -65,6 +66,12 @@ class Game:
             self.remove_obstacle_sound = mixer.Sound(C.REMOVE_OBSTACLE_SOUND_FILE)
         except pygame.error as e:
             print(f"Warning: Could not load remove obstacle sound ({C.REMOVE_OBSTACLE_SOUND_FILE}): {e}")
+
+        try:
+            self.whoosh_sound = mixer.Sound(C.WHOOSH_SOUND_FILE)
+            self.whoosh_sound.set_volume(0.7)
+        except pygame.error as e:
+            print(f"Warning: Could not load whoosh sound ({C.WHOOSH_SOUND_FILE}): {e}")
 
         self.reset()
 
@@ -394,6 +401,20 @@ class Game:
             if k in charge_based or v > 1
         }
 
+    def _start_menu_music(self):
+        """Start looping menu music if it isn't already playing."""
+        if C.MENU_MUSIC_FILE and not mixer.music.get_busy():
+            try:
+                mixer.music.load(C.MENU_MUSIC_FILE)
+                mixer.music.set_volume(C.MENU_MUSIC_VOLUME)
+                mixer.music.play(-1)
+            except pygame.error:
+                pass
+
+    def _stop_menu_music(self):
+        """Fade the menu music out over MENU_MUSIC_FADEOUT_MS milliseconds."""
+        mixer.music.fadeout(C.MENU_MUSIC_FADEOUT_MS)
+
     def _start_level_exit(self):
         """Begin the portal exit animation.
         The snake continues moving naturally (move() called each tick);
@@ -407,6 +428,8 @@ class Game:
         self.snake.exit_original_n = self.exit_original_length
         self.snake.exit_consumed   = 0
         self.game_speed            = C.EXIT_ANIMATION_SPEED
+        if self.whoosh_sound:
+            self.whoosh_sound.play()
 
     def _calc_level_clear_bonus(self, elapsed):
         overtime = max(0, elapsed - C.LEVEL_CLEAR_BONUS_DECAY)
@@ -414,6 +437,7 @@ class Game:
 
     def _show_level_clear_screen(self, elapsed_ticks, bonus):
         """Blocking animated screen shown between levels."""
+        self._start_menu_music()
         self.screen.reset_waves()
         anim_tick = 0
         waiting   = True
@@ -433,6 +457,7 @@ class Game:
                         waiting = False
                     elif event.key == K_ESCAPE:
                         self.running = False
+        self._stop_menu_music()
 
     def _setup_next_level(self):
         """Advance to next_level, clear the field, and place the snake at a new entry portal."""
@@ -847,6 +872,7 @@ class Game:
     
     def wait_for_continue_after_death(self):
         """Game pauses and awaits 'Space'. Other buttons cannot be pressed. In the meantime a random joke sentence will pass over the screen."""
+        self._start_menu_music()
         # chose random joke from the death message list
         joke_text = random.choice(C.Death_Messages)
         text_height_start = random.randint(50, C.SCREEN_HEIGHT-100)
@@ -959,6 +985,7 @@ class Game:
 
         # If the game is still running (i.e., didn't quit), reset for a new game
         if self.running:
+            self._stop_menu_music()
             self.reset()
 
     def reset(self):
