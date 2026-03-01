@@ -98,10 +98,7 @@ class Game:
             for _ in range(4):
                 self._add_obstacle("orthogonal")
         elif self.start_level == 3:
-            for _ in range(3):
-                self._add_obstacle("orthogonal")
-            for _ in range(8):
-                self._add_obstacle("diagonal")
+            pass
         elif self.start_level == 4:
             for _ in range(4):
                 self._add_obstacle("seeker")
@@ -517,11 +514,6 @@ class Game:
         self.apple_visible = True
         self.apple.respawn(self._get_occupied_positions())
         self.level_start_tick = self.time_alive
-
-        # Spawn a small starter set of obstacles so the new level feels populated immediately
-        if self.level == 3:
-            for _ in range(5):
-                self._add_obstacle("diagonal")
 
     def _complete_level_exit(self):
         """Called when the last snake segment has entered the door."""
