@@ -72,10 +72,19 @@ def color_invert(game):
 
 
 def spawn_enemies(game):
-    """Spawn BUFF_SPAWN_ENEMIES_COUNT random obstacles that despawn after BUFF_SPAWN_ENEMIES_LIFESPAN ticks."""
-    types = ["static", "orthogonal", "diagonal"]
+    """Spawn BUFF_SPAWN_ENEMIES_COUNT obstacles from enemy types the player has already encountered.
+    Swarm enemies persist until the end of the level (no lifespan)."""
+    level = game.level
+    if level >= 4:
+        types = ["static", "orthogonal", "diagonal", "seeker"]
+    elif level == 3:
+        types = ["static", "orthogonal", "diagonal"]
+    elif level == 2:
+        types = ["static", "orthogonal"]
+    else:
+        types = ["static"]
     for _ in range(C.BUFF_SPAWN_ENEMIES_COUNT):
-        game._add_obstacle(random.choice(types), lifespan=C.BUFF_SPAWN_ENEMIES_LIFESPAN)
+        game._add_obstacle(random.choice(types))
 
 
 def darkness(game):

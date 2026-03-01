@@ -65,7 +65,7 @@ MAGIC_APPLE_LIFESPAN = 50  # Lifespan in ticks
 BUFF_DURATION_SPEED_UP = 120
 BUFF_DURATION_SPEED_DOWN = 120
 BUFF_DURATION_GHOST = 100
-BUFF_DURATION_NO_GROW = 80
+BUFF_DURATION_NO_GROW = 300
 BUFF_DURATION_DOUBLE_SCORE = 300
 BUFF_DURATION_FREEZE = 70
 SHIELD_HITS = 3             # obstacle hits the shield absorbs before breaking
@@ -125,6 +125,7 @@ LEVEL_CLEAR_BONUS_BASE  = 20           # max speed-bonus points awarded on level
 LEVEL_CLEAR_BONUS_DECAY = 100          # ticks of grace before bonus starts decaying
 LEVEL_CLEAR_BONUS_RATE  = 40           # ticks per 1 bonus point lost after grace period
 EXIT_ANIMATION_SPEED    = 40           # ticks/sec while snake crawls through the exit portal
+DOOR_FADEOUT_TICKS      = 20           # ticks for the exit portal to fade out after snake is through
 
 # Moving Obstacle Constants
 MOVING_OBSTACLE_USE_FLOAT_COLLISION = True # Set to True for smooth snake/moving_obstacle collision
@@ -132,8 +133,9 @@ MOVING_OBSTACLE_COLOR_DIAGONAL = (150, 110, 200)   # Brighter purple for diagona
 MOVING_OBSTACLE_COLOR_ORTHOGONAL = (220, 120, 60)  # Orange-amber for orthogonal obstacles
 MOVING_OBSTACLE_COLOR_SEEKER = (210, 55, 55)       # Crimson red for homing seeker obstacles
 MOVING_OBSTACLE_SIZE = (GRID_SIZE, GRID_SIZE)
-MOVING_OBSTACLE_SPEED = 0.1   # Grid cells per frame
-SEEKER_OBSTACLE_SPEED = 0.12  # Slightly faster than regular moving obstacles
+MOVING_OBSTACLE_SPEED = 0.1      # Grid cells per frame (minimum / base speed)
+MOVING_OBSTACLE_SPEED_MAX = 0.22 # Maximum speed for diagonal obstacles (random per-obstacle)
+SEEKER_OBSTACLE_SPEED = 0.12     # Slightly faster than regular moving obstacles
 SEEKER_TURN_RATE_SCALE = 0.60 # Turn rate = SCALE / dist; seeker is passive far away, aggressive up close
 SEEKER_TURN_RATE_MAX  = 0.35  # Cap so the seeker never snap-turns at point-blank range
 

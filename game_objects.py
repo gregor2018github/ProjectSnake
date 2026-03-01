@@ -257,8 +257,9 @@ class MovingObstacle(GameObject):
     def __init__(self, x, y):
         super().__init__(x, y, C.MOVING_OBSTACLE_SIZE[0], C.MOVING_OBSTACLE_SIZE[1], C.MOVING_OBSTACLE_COLOR_DIAGONAL)
         # Randomly assign an initial direction
-        self.dx = random.choice([-1, 1]) * C.MOVING_OBSTACLE_SPEED
-        self.dy = random.choice([-1, 1]) * C.MOVING_OBSTACLE_SPEED
+        speed = random.uniform(C.MOVING_OBSTACLE_SPEED, C.MOVING_OBSTACLE_SPEED_MAX)
+        self.dx = random.choice([-1, 1]) * speed
+        self.dy = random.choice([-1, 1]) * speed
         # Store the actual position as floats for smoother movement
         # Initialize float_x/y based on the initial grid position x/y
         self.float_x = float(x)

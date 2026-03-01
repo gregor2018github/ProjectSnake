@@ -100,7 +100,7 @@ class Game:
         elif self.start_level == 3:
             for _ in range(3):
                 self._add_obstacle("orthogonal")
-            for _ in range(3):
+            for _ in range(8):
                 self._add_obstacle("diagonal")
         elif self.start_level == 4:
             for _ in range(4):
@@ -501,8 +501,9 @@ class Game:
         elif wall == 'left':   hx, hy = 1, entry.y
         else:                  hx, hy = C.GRID_WIDTH - 2, entry.y
 
-        # Build positions: head at hx,hy; body segments trail toward the wall
-        n = C.SNAKE_START_LENGTH
+        # Build positions: head at hx,hy; body segments trail toward the wall.
+        # Preserve the snake's current length when transitioning between levels.
+        n = len(self.snake.positions) if self.snake else C.SNAKE_START_LENGTH
         positions = [
             (max(0, min(C.GRID_WIDTH  - 1, hx + ex * i)),
              max(0, min(C.GRID_HEIGHT - 1, hy + ey * i)))
@@ -516,6 +517,11 @@ class Game:
         self.apple_visible = True
         self.apple.respawn(self._get_occupied_positions())
         self.level_start_tick = self.time_alive
+
+        # Spawn a small starter set of obstacles so the new level feels populated immediately
+        if self.level == 3:
+            for _ in range(5):
+                self._add_obstacle("diagonal")
 
     def _complete_level_exit(self):
         """Called when the last snake segment has entered the door."""
@@ -537,8 +543,12 @@ class Game:
                 self.exit_consumed      += 1
                 self.exit_segments_left -= 1
                 self.snake.exit_consumed = self.exit_consumed
-            if self.exit_segments_left <= 0:
-                self._complete_level_exit()
+                if self.exit_segments_left == 0:
+                    self.exit_door_fade = C.DOOR_FADEOUT_TICKS  # begin portal fade-out
+            elif self.exit_door_fade > 0:
+                self.exit_door_fade -= 1
+                if self.exit_door_fade <= 0:
+                    self._complete_level_exit()
             self._tick_active_buffs()
             self.time_alive += 1
             self._update_mechanics_and_objects()
@@ -749,7 +759,11 @@ class Game:
 
         # Level door portals
         if self.level_door:
-            self.level_door.draw(self.screen.surface)
+            if self.level_exiting and self.exit_segments_left <= 0 and C.DOOR_FADEOUT_TICKS > 0:
+                door_alpha = self.exit_door_fade / C.DOOR_FADEOUT_TICKS
+                self.level_door.draw(self.screen.surface, alpha_scale=door_alpha)
+            else:
+                self.level_door.draw(self.screen.surface)
         if self.entry_door:
             fade = max(0.0, self.entry_door_ticks / C.DOOR_ENTRY_FADE_TICKS)
             self.entry_door.draw(self.screen.surface, alpha_scale=fade)
@@ -1033,6 +1047,7 @@ class Game:
         self.exit_segments_left   = 0
         self.exit_consumed        = 0       # segments consumed from front so far
         self.exit_original_length = 0
+        self.exit_door_fade       = 0       # countdown for portal fade-out after snake exits
         self.level_start_tick     = 0       # time_alive when current level began
         self.entry_door           = None    # fading entry portal (visual only)
         self.entry_door_ticks     = 0       # countdown for entry portal fade
