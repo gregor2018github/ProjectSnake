@@ -9,7 +9,7 @@ from time import sleep
 import constants as C
 import high_scores as hs
 import magic_apple_logic as mal
-from game_objects import Snake, Apple, MagicApple, Obstacle, MovingObstacle, ParticleEffect, OrthogonalMovingObstacle, SeekerObstacle, BuffAnnouncement, ShockwaveEffect
+from game_objects import Snake, Apple, MagicApple, Obstacle, MovingObstacle, ParticleEffect, OrthogonalMovingObstacle, SeekerObstacle, BuffAnnouncement, ShockwaveEffect, LevelDoor
 from screen import Screen
 
 class Game:
@@ -195,71 +195,78 @@ class Game:
                 break
 
     def _check_for_level_up(self):
-        """Checks if the player should advance to the next level (based on apples eaten)."""
-        if self.level == 1 and self.apples_eaten >= C.LEVEL_2_APPLES:
-            self.level = 2
-            self.max_level_reached = 2
-            self.removing_static_obstacles = True
-        elif self.level == 2 and self.apples_eaten >= C.LEVEL_3_APPLES:
-            self.level = 3
-            self.max_level_reached = 3
-            self.removing_orthogonal_obstacles = True
-        elif self.level == 3 and self.apples_eaten >= C.LEVEL_4_APPLES:
-            self.level = 4
-            self.max_level_reached = 4
-            self.removing_diagonal_obstacles = True
-        elif self.level == 4 and self.apples_eaten >= C.LEVEL_5_APPLES:
-            self.level = 5
-            self.max_level_reached = 5
-            self.removing_seeker_obstacles = True
+        """Checks if the player should start clearing the current level (based on apples eaten).
+        Level actually increments only after the snake exits the door."""
+        if self.level_clearing or self.level_door or self.level_exiting:
+            return
+        thresholds = {
+            1: C.LEVEL_2_APPLES,
+            2: C.LEVEL_3_APPLES,
+            3: C.LEVEL_4_APPLES,
+            4: C.LEVEL_5_APPLES,
+        }
+        if self.level not in thresholds or self.apples_eaten < thresholds[self.level]:
+            return
+        self.next_level     = self.level + 1
+        self.level_clearing = True
+        self.apple_visible  = False   # no apple visible during clear/door/exit sequence
+        if self.level == 1:   self.removing_static_obstacles     = True
+        elif self.level == 2: self.removing_orthogonal_obstacles  = True
+        elif self.level == 3: self.removing_diagonal_obstacles    = True
+        elif self.level == 4: self.removing_seeker_obstacles      = True
+
+    def _spawn_level_door(self):
+        """Spawn the exit portal on a random wall edge."""
+        self.level_door = LevelDoor(random.choice(['top', 'bottom', 'left', 'right']))
 
     def _update_mechanics_and_objects(self):
         """Updates mechanics, basically a collection folder for everything that must be checked."""
-        if self.level == 2:
-            # In level 2, remove static obstacles with dust particles
-            if len(self.obstacles) > 0 and self.frame_counter % C.OBSTACLE_REMOVAL_INTERVAL == 0:
-                obstacle_to_remove = self.obstacles.pop(0)  # Remove the first obstacle
+        # Static obstacle removal (clearing phase 1 → 2)
+        if self.removing_static_obstacles and self.frame_counter % C.OBSTACLE_REMOVAL_INTERVAL == 0:
+            if self.obstacles:
+                obstacle_to_remove = self.obstacles.pop(0)
                 if self.remove_obstacle_sound:
                     self.remove_obstacle_sound.play()
-                # Create dust particles for obstacle removal (is_spawning=False)
                 self.particle_effects.append(ParticleEffect(obstacle_to_remove.x, obstacle_to_remove.y, "obstacle_static", is_spawning=False))
-        
+            else:
+                self.removing_static_obstacles = False
+                if self.level_clearing:
+                    self._spawn_level_door()
+
         # Handle orthogonal obstacle removal with dust particles
         if self.removing_orthogonal_obstacles and self.frame_counter % C.MOVING_OBSTACLE_REMOVAL_INTERVAL == 0:
-            orthogonal_obstacles = [obstacle for obstacle in self.moving_obstacles 
+            orthogonal_obstacles = [obstacle for obstacle in self.moving_obstacles
                                     if isinstance(obstacle, OrthogonalMovingObstacle)]
             if orthogonal_obstacles:
-                # Remove the first orthogonal obstacle
                 obstacle_to_remove = orthogonal_obstacles[0]
                 self.moving_obstacles.remove(obstacle_to_remove)
-                # Play removal sound
                 if self.remove_obstacle_sound:
                     self.remove_obstacle_sound.play()
-                # Create dust particles for removal
                 self.particle_effects.append(ParticleEffect(obstacle_to_remove.x, obstacle_to_remove.y, "obstacle_orthogonal", is_spawning=False))
             else:
                 self.removing_orthogonal_obstacles = False
-        
+                if self.level_clearing:
+                    self._spawn_level_door()
+
         # Handle diagonal obstacle removal with dust particles
-        if hasattr(self, 'removing_diagonal_obstacles') and self.removing_diagonal_obstacles and self.frame_counter % C.MOVING_OBSTACLE_REMOVAL_INTERVAL == 0:
+        if self.removing_diagonal_obstacles and self.frame_counter % C.MOVING_OBSTACLE_REMOVAL_INTERVAL == 0:
             diagonal_obstacles = [obstacle for obstacle in self.moving_obstacles
                                   if isinstance(obstacle, MovingObstacle)
                                   and not isinstance(obstacle, OrthogonalMovingObstacle)
                                   and not isinstance(obstacle, SeekerObstacle)]
             if diagonal_obstacles:
-                # Remove the first diagonal obstacle
                 obstacle_to_remove = diagonal_obstacles[0]
                 self.moving_obstacles.remove(obstacle_to_remove)
-                # Play removal sound
                 if self.remove_obstacle_sound:
                     self.remove_obstacle_sound.play()
-                # Create dust particles for removal
                 self.particle_effects.append(ParticleEffect(obstacle_to_remove.x, obstacle_to_remove.y, "obstacle_diagonal", is_spawning=False))
             else:
                 self.removing_diagonal_obstacles = False
+                if self.level_clearing:
+                    self._spawn_level_door()
 
         # Handle seeker obstacle removal with dust particles (transition 4 → 5)
-        if hasattr(self, 'removing_seeker_obstacles') and self.removing_seeker_obstacles and self.frame_counter % C.MOVING_OBSTACLE_REMOVAL_INTERVAL == 0:
+        if self.removing_seeker_obstacles and self.frame_counter % C.MOVING_OBSTACLE_REMOVAL_INTERVAL == 0:
             seeker_obstacles = [ob for ob in self.moving_obstacles if isinstance(ob, SeekerObstacle)]
             if seeker_obstacles:
                 obstacle_to_remove = seeker_obstacles[0]
@@ -269,6 +276,17 @@ class Game:
                 self.particle_effects.append(ParticleEffect(int(obstacle_to_remove.float_x), int(obstacle_to_remove.float_y), "obstacle_seeker", is_spawning=False))
             else:
                 self.removing_seeker_obstacles = False
+                if self.level_clearing:
+                    self._spawn_level_door()
+
+        # Tick door animations
+        if self.level_door:
+            self.level_door.update()
+        if self.entry_door:
+            self.entry_door.update()
+            self.entry_door_ticks -= 1
+            if self.entry_door_ticks <= 0:
+                self.entry_door = None
                 
         # Update moving obstacles (frozen during freeze_obstacles buff)
         if 'freeze_obstacles' not in self.active_buffs:
@@ -383,8 +401,117 @@ class Game:
             if k in charge_based or v > 1
         }
 
+    def _start_level_exit(self):
+        """Begin the portal exit animation.
+        The snake continues moving naturally (move() called each tick);
+        segments that have passed through the portal are simply not rendered."""
+        self.exit_original_length  = len(self.snake.positions)
+        self.exit_consumed         = 0
+        self.exit_segments_left    = self.exit_original_length
+        self.level_exiting         = True
+        self.snake.exit_mode       = True
+        self.snake.exit_original_n = self.exit_original_length
+        self.snake.exit_consumed   = 0
+
+    def _calc_level_clear_bonus(self, elapsed):
+        overtime = max(0, elapsed - C.LEVEL_CLEAR_BONUS_DECAY)
+        return max(0, C.LEVEL_CLEAR_BONUS_BASE - overtime // C.LEVEL_CLEAR_BONUS_RATE)
+
+    def _show_level_clear_screen(self, elapsed_ticks, bonus):
+        """Blocking animated screen shown between levels."""
+        self.screen.reset_waves()
+        anim_tick = 0
+        waiting   = True
+        while waiting and self.running:
+            self.clock.tick(20)
+            anim_tick += 1
+            self.screen.tick_waves()
+            self.screen.draw_level_clear_screen(
+                self.level, self.next_level, elapsed_ticks, bonus, self.score, anim_tick
+            )
+            self.screen.update()
+            for event in pygame.event.get():
+                if event.type == QUIT:
+                    self.running = False
+                elif event.type == KEYDOWN:
+                    if event.key in (K_RETURN, K_SPACE):
+                        waiting = False
+                    elif event.key == K_ESCAPE:
+                        self.running = False
+
+    def _setup_next_level(self):
+        """Advance to next_level, clear the field, and place the snake at a new entry portal."""
+        self.level              = self.next_level
+        self.max_level_reached  = max(self.max_level_reached, self.level)
+        self.level_clearing     = False
+        self.level_door         = None
+        self.level_exiting      = False
+        self.obstacle_hit_cooldowns.clear()
+        self.active_buffs.clear()
+        self.obstacles.clear()
+        self.moving_obstacles.clear()
+        self.magic_apples.clear()
+        self.particle_effects.clear()
+
+        # Entry portal on a random wall
+        wall  = random.choice(['top', 'bottom', 'left', 'right'])
+        entry = LevelDoor(wall, start_tick=C.DOOR_APPEAR_TICKS)  # fully visible immediately
+        self.entry_door       = entry
+        self.entry_door_ticks = C.DOOR_ENTRY_FADE_TICKS
+
+        # exit_dir points INTO the wall; snake moves in the opposite direction (away from wall)
+        ex, ey   = entry.exit_dir
+        in_x, in_y = -ex, -ey
+
+        if wall == 'top':    hx, hy = entry.x, 1
+        elif wall == 'bottom': hx, hy = entry.x, C.GRID_HEIGHT - 2
+        elif wall == 'left':   hx, hy = 1, entry.y
+        else:                  hx, hy = C.GRID_WIDTH - 2, entry.y
+
+        # Build positions: head at hx,hy; body segments trail toward the wall
+        n = C.SNAKE_START_LENGTH
+        positions = [
+            (max(0, min(C.GRID_WIDTH  - 1, hx + ex * i)),
+             max(0, min(C.GRID_HEIGHT - 1, hy + ey * i)))
+            for i in range(n)
+        ]
+        self.snake            = Snake()
+        self.snake.positions  = positions
+        self.snake.length     = n
+        self.snake.direction  = (in_x, in_y)
+
+        self.apple_visible = True
+        self.apple.respawn(self._get_occupied_positions())
+        self.level_start_tick = self.time_alive
+
+    def _complete_level_exit(self):
+        """Called when the last snake segment has entered the door."""
+        elapsed = self.time_alive - self.level_start_tick
+        bonus   = self._calc_level_clear_bonus(elapsed)
+        self.score += bonus
+        self._show_level_clear_screen(elapsed, bonus)
+        if self.running:
+            self._setup_next_level()
+        self.level_exiting = False
+
     def update_game_state(self):
         """ Updates the position of the snake. """
+
+        # --- Level exit animation: snake moves naturally; portal clips rendering ---
+        if self.level_exiting:
+            if self.exit_segments_left > 0:
+                self.snake.move(ghost=True)   # advance naturally; head wraps around
+                self.exit_consumed      += 1
+                self.exit_segments_left -= 1
+                self.snake.exit_consumed = self.exit_consumed
+            if self.exit_segments_left <= 0:
+                self._complete_level_exit()
+            self._tick_active_buffs()
+            self.time_alive += 1
+            self._update_mechanics_and_objects()
+            self.particle_effects = [e for e in self.particle_effects if e.update()]
+            return
+
         # Apply the buffered direction change before moving
         if self.next_direction:
             self.snake.change_direction(self.next_direction)
@@ -456,8 +583,10 @@ class Game:
 
     def check_collisions(self):
         """ Checks for collisions between game objects. """
-        # Snake eating apple
-        if self.snake.collides_with_rect(self.apple.rect):
+        if self.level_exiting:
+            return  # no collisions during door exit animation
+        # Snake eating apple (hidden during level-clear sequence)
+        if self.apple_visible and self.snake.collides_with_rect(self.apple.rect):
             self.combo_count += 1
             self.combo_timer = C.COMBO_WINDOW
             if self.combo_count > self.max_combo:
@@ -471,17 +600,18 @@ class Game:
             if self.apple_eat_sound:
                 self.apple_eat_sound.play()
 
-            # Level-specific behaviors when apple is eaten
-            if self.level == 1:
-                self._add_obstacle("static")
-            elif self.level == 2:
-                self._add_obstacle("orthogonal")
-            elif self.level == 3:
-                self._add_obstacle("diagonal")
-            elif self.level == 4:
-                self._add_obstacle("seeker")
-            elif self.level == 5:
-                self._add_obstacle(random.choice(["static", "orthogonal", "diagonal", "seeker"]))
+            # Level-specific obstacle spawning (paused while clearing or door active)
+            if not self.level_clearing and not self.level_door:
+                if self.level == 1:
+                    self._add_obstacle("static")
+                elif self.level == 2:
+                    self._add_obstacle("orthogonal")
+                elif self.level == 3:
+                    self._add_obstacle("diagonal")
+                elif self.level == 4:
+                    self._add_obstacle("seeker")
+                elif self.level == 5:
+                    self._add_obstacle(random.choice(["static", "orthogonal", "diagonal", "seeker"]))
 
             # Respawn apple, ensuring it's not on the snake or obstacles
             self.apple.respawn(self._get_occupied_positions())
@@ -542,6 +672,11 @@ class Game:
                         self.obstacle_hit_cooldowns[moving_obstacle] = C.OBSTACLE_HIT_COOLDOWN
                     break
 
+        # Level door entry: snake head in door cell moving toward the wall
+        if self.level_door and self.running and not self.level_exiting:
+            if self.level_door.is_head_entering(self.snake):
+                self._start_level_exit()
+
     def draw(self):
         """ Draws all game elements onto the screen. """
         invert = 'color_invert' in self.active_buffs
@@ -555,12 +690,13 @@ class Game:
         self.snake.invert_colors = invert
         self.screen.draw_element(self.snake)
 
-        # Apple: green when inverted, normal red otherwise
-        orig_apple_color = self.apple.color
-        if invert:
-            self.apple.color = (0, 190, 0)
-        self.screen.draw_element(self.apple)
-        self.apple.color = orig_apple_color
+        # Apple: hidden during level-clear sequence
+        if self.apple_visible:
+            orig_apple_color = self.apple.color
+            if invert:
+                self.apple.color = (0, 190, 0)
+            self.screen.draw_element(self.apple)
+            self.apple.color = orig_apple_color
 
         # Magic apples: swap fill to magenta when inverted; border (lifespan) unchanged
         for magic_apple in self.magic_apples:
@@ -574,6 +710,13 @@ class Game:
             self.screen.draw_element(obstacle)
         for moving_obstacle in self.moving_obstacles:
             self.screen.draw_element(moving_obstacle)
+
+        # Level door portals
+        if self.level_door:
+            self.level_door.draw(self.screen.surface)
+        if self.entry_door:
+            fade = max(0.0, self.entry_door_ticks / C.DOOR_ENTRY_FADE_TICKS)
+            self.entry_door.draw(self.screen.surface, alpha_scale=fade)
 
         # Darkness buff: drape a fully-opaque vignette over the gameplay layer,
         # leaving only a soft-edged circle around the snake head visible.
@@ -845,6 +988,17 @@ class Game:
         self.removing_orthogonal_obstacles = False
         self.removing_diagonal_obstacles = False
         self.removing_seeker_obstacles = False
+        self.level_clearing       = False   # threshold hit; old obstacles being removed
+        self.next_level           = 1       # level that becomes active after the next door
+        self.level_door           = None    # LevelDoor (exit portal), active until snake exits
+        self.level_exiting        = False   # True during exit animation
+        self.exit_segments_left   = 0
+        self.exit_consumed        = 0       # segments consumed from front so far
+        self.exit_original_length = 0
+        self.level_start_tick     = 0       # time_alive when current level began
+        self.entry_door           = None    # fading entry portal (visual only)
+        self.entry_door_ticks     = 0       # countdown for entry portal fade
+        self.apple_visible        = True    # False while clearing/door active (no new apples)
         self.death_pos = None   # screen-pixel (cx, cy) of the object that killed the snake
         self.obstacle_hit_cooldowns = {}  # obstacle -> ticks until same obstacle can hit again
         self.running = True

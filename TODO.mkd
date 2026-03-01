@@ -1,9 +1,7 @@
 # ProjectSnake - TODO List
 
 ## Current Tasks
-- A level can only be cleared by going through a particular door.
 - Each individual level has a different background theme (e.g. forest theme, beach theme etc.)
-- The faster you finish a game from entering until exiting, you get a time bonus.
 
 
 ## Backlog
@@ -11,6 +9,10 @@
 - Randomly generate a bonus level with an extra door where the snacke transforms into a rabbit that has to eat carrots. The rabbit is hopping instead of sliding, and the enemies are birds. The rabbit makes jumps of 2 cells instead of 1.
 
 ## Completed Tasks
+- Level door portal system: clearing all obstacles spawns a cyan portal; snake must enter it to advance; between-level stats screen shows time bonus; snake enters next level via a new entry portal.
+- Time bonus awarded for fast level completion (20 pts max, grace period then decay).
+- Apple hidden and obstacle spawning paused during the level-clear/door/exit sequence.
+- Snake exit animation: snake crawls naturally into the portal; segments that have passed through are clipped from rendering while preserving original gradient shading.
 - Obstacle hit cooldown prevents the same obstacle draining multiple shield charges on a single pass-through.
 - Travel distance stat card now shows "X.Xk cells" for values ≥ 1000 to prevent label overlap.
 - Double points buff duration tripled (100 → 300 ticks).

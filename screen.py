@@ -515,5 +515,50 @@ class Screen:
         restart_rect, quit_rect = self._draw_restart_buttons(tick)
         return restart_rect, quit_rect
 
+    # ------------------------------------------------------------------ level clear screen
+    def draw_level_clear_screen(self, current_level, next_level, elapsed_ticks, bonus, total_score, tick):
+        """Animated between-level stats screen shown after the snake exits through a door."""
+        cx = self.width // 2
+
+        # Animated ripple-grid background
+        self._draw_ripple_grid()
+
+        # Main panel
+        panel = pygame.Rect(60, 70, 480, 390)
+        self._panel(panel, (8, 22, 8, 235), C.PANEL_BORDER_COLOR)
+
+        # Title
+        self._shadow_text(self.title_font, 'LEVEL  CLEAR!', (80, 230, 80), (cx, 128))
+
+        # Level transition label
+        transition = f'Level {current_level}   \u2192   Level {next_level}'
+        self._shadow_text(self.score_font, transition, C.GAMEOVER_SCORE_COLOR, (cx, 180))
+
+        # Divider
+        pygame.draw.line(self.surface, C.PANEL_BORDER_COLOR, (80, 205), (520, 205), 1)
+
+        # Stat rows
+        elapsed_sec = elapsed_ticks // 10
+        rows = [
+            ('Time',         f'{elapsed_sec}s'),
+            ('Speed Bonus',  f'+{bonus} pts'),
+            ('Total Score',  str(total_score)),
+        ]
+        y = 232
+        for label, value in rows:
+            lsurf = self.prompt_font.render(label,  True, C.TEXT_DIM_COLOR)
+            vsurf = self.font.render(value, True, C.TEXT_COLOR)
+            self.surface.blit(lsurf, lsurf.get_rect(midleft=(cx - 150, y)))
+            self.surface.blit(vsurf, vsurf.get_rect(midright=(cx + 150, y)))
+            y += 42
+
+        # Divider
+        pygame.draw.line(self.surface, C.PANEL_BORDER_COLOR, (80, 365), (520, 365), 1)
+
+        # Pulsing continue hint
+        pulse = int(160 + 80 * math.sin(tick * 0.15))
+        hint = self.prompt_font.render('SPACE / ENTER   to continue', True, (80, pulse, 80))
+        self.surface.blit(hint, hint.get_rect(center=(cx, 400)))
+
     def update(self):
         pygame.display.update()

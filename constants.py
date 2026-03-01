@@ -104,6 +104,14 @@ OBSTACLE_SIZE = (GRID_SIZE, GRID_SIZE)
 MIN_OBSTACLE_SPAWN_DISTANCE = 5  # Minimum distance from the snake head to spawn obstacles
 OBSTACLE_HIT_COOLDOWN = 6       # Ticks before the same obstacle can drain another shield charge
 
+# Level Door / Portal
+DOOR_APPEAR_TICKS       = 20           # ticks for the spawn-in animation
+DOOR_COLOR              = (80, 200, 255)  # cyan-blue portal
+DOOR_ENTRY_FADE_TICKS   = 60           # ticks the entry portal stays visible before fading
+LEVEL_CLEAR_BONUS_BASE  = 20           # max speed-bonus points awarded on level clear
+LEVEL_CLEAR_BONUS_DECAY = 100          # ticks of grace before bonus starts decaying
+LEVEL_CLEAR_BONUS_RATE  = 40           # ticks per 1 bonus point lost after grace period
+
 # Moving Obstacle Constants
 MOVING_OBSTACLE_USE_FLOAT_COLLISION = True # Set to True for smooth snake/moving_obstacle collision
 MOVING_OBSTACLE_COLOR_DIAGONAL = (150, 110, 200)   # Brighter purple for diagonal obstacles

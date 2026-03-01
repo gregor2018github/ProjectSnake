@@ -97,6 +97,18 @@ class Snake:
             else:
                 pygame.draw.rect(surface, color, pygame.Rect(rx, ry, seg_size, seg_size))
 
+        # Exit-portal animation: segments that have passed through the portal are
+        # not rendered; remaining segments draw with their original gradient shading.
+        if getattr(self, 'exit_mode', False) and n > 0:
+            exit_consumed = getattr(self, 'exit_consumed', 0)
+            original_n    = getattr(self, 'exit_original_n', n)
+            for i, (x, y) in enumerate(self.positions[exit_consumed:]):
+                orig_i = exit_consumed + i
+                t = orig_i / max(original_n - 2, 1)
+                v = int(200 - t * 130)
+                _draw_seg(x, y, (0, max(70, v), 0))
+            return
+
         # Head
         head_x, head_y = self.positions[0]
         inv = getattr(self, 'invert_colors', False)
@@ -649,6 +661,85 @@ class ParticleEffect:
             
         for particle in self.particles:
             particle.draw(surface)
+
+
+class LevelDoor:
+    """Portal that appears at a wall edge when a level is fully cleared.
+    The snake must navigate to it and enter (head in door cell + moving into wall)
+    to proceed to the next level.  Also used as a fading entry portal."""
+
+    WIDTH = 2  # cells wide
+
+    def __init__(self, wall, start_tick=0):
+        """wall: 'top' | 'bottom' | 'left' | 'right'
+        start_tick: set to DOOR_APPEAR_TICKS to make the door fully visible immediately."""
+        self.wall = wall
+        self.tick = start_tick
+        margin = 3
+        if wall in ('top', 'bottom'):
+            self.x = random.randint(margin, C.GRID_WIDTH  - self.WIDTH - margin)
+            self.y = 0 if wall == 'top' else C.GRID_HEIGHT - 1
+            self.cells_list = [(self.x + i, self.y) for i in range(self.WIDTH)]
+            self.exit_dir   = (0, -1) if wall == 'top' else (0, 1)
+            self.px = pygame.Rect(self.x * C.GRID_SIZE, self.y * C.GRID_SIZE,
+                                  self.WIDTH * C.GRID_SIZE, C.GRID_SIZE)
+        else:
+            self.y = random.randint(margin, C.GRID_HEIGHT - self.WIDTH - margin)
+            self.x = 0 if wall == 'left' else C.GRID_WIDTH - 1
+            self.cells_list = [(self.x, self.y + i) for i in range(self.WIDTH)]
+            self.exit_dir   = (-1, 0) if wall == 'left' else (1, 0)
+            self.px = pygame.Rect(self.x * C.GRID_SIZE, self.y * C.GRID_SIZE,
+                                  C.GRID_SIZE, self.WIDTH * C.GRID_SIZE)
+
+    @property
+    def cells(self):
+        return self.cells_list
+
+    def update(self):
+        self.tick += 1
+
+    def is_head_entering(self, snake):
+        """True when the snake head is in a door cell and moving toward the wall."""
+        return (snake.get_head_position() in self.cells_list
+                and snake.direction == self.exit_dir)
+
+    def draw(self, surface, alpha_scale=1.0):
+        appear = min(1.0, self.tick / max(1, C.DOOR_APPEAR_TICKS)) * alpha_scale
+        if appear <= 0.01:
+            return
+        pulse = 0.5 + 0.5 * math.sin(self.tick * 0.18)
+        r, g, b = C.DOOR_COLOR
+        cx = self.px.x + self.px.w // 2
+        cy = self.px.y + self.px.h // 2
+
+        # Outer glow pad
+        gp = int(8 * appear)
+        glow_rect = pygame.Rect(self.px.x - gp, self.px.y - gp,
+                                self.px.w + gp * 2, self.px.h + gp * 2)
+        gs = pygame.Surface((glow_rect.w, glow_rect.h), pygame.SRCALPHA)
+        gs.fill((r, g, b, int(45 * appear * pulse)))
+        surface.blit(gs, (glow_rect.x, glow_rect.y))
+
+        # Inner fill
+        fs = pygame.Surface((self.px.w, self.px.h), pygame.SRCALPHA)
+        fs.fill((r, g, b, int(120 * appear * (0.55 + 0.45 * pulse))))
+        surface.blit(fs, (self.px.x, self.px.y))
+
+        # Pulsing border
+        bc = (int(r * (0.4 + 0.6 * pulse)), min(255, int(g * 1.0)), b)
+        pygame.draw.rect(surface, bc, self.px, max(1, int(3 * appear)))
+
+        # 3 staggered expanding rings
+        max_r = max(self.px.w, self.px.h) + 4
+        for i in range(3):
+            phase = (self.tick * 0.10 + i / 3.0) % 1.0
+            rr = int(max_r * (0.4 + phase * 0.8) * appear)
+            ra = int(140 * (1.0 - phase) * appear)
+            if rr > 1 and ra > 0:
+                diam = rr * 2 + 4
+                s = pygame.Surface((diam, diam), pygame.SRCALPHA)
+                pygame.draw.ellipse(s, (r, g, b, ra), (0, 0, diam, diam), 2)
+                surface.blit(s, (cx - rr - 2, cy - rr - 2))
 
 
 class BuffAnnouncement:
