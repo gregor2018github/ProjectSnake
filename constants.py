@@ -111,6 +111,7 @@ DOOR_ENTRY_FADE_TICKS   = 60           # ticks the entry portal stays visible be
 LEVEL_CLEAR_BONUS_BASE  = 20           # max speed-bonus points awarded on level clear
 LEVEL_CLEAR_BONUS_DECAY = 100          # ticks of grace before bonus starts decaying
 LEVEL_CLEAR_BONUS_RATE  = 40           # ticks per 1 bonus point lost after grace period
+EXIT_ANIMATION_SPEED    = 40           # ticks/sec while snake crawls through the exit portal
 
 # Moving Obstacle Constants
 MOVING_OBSTACLE_USE_FLOAT_COLLISION = True # Set to True for smooth snake/moving_obstacle collision

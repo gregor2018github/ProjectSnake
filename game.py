@@ -214,6 +214,7 @@ class Game:
         elif self.level == 2: self.removing_orthogonal_obstacles  = True
         elif self.level == 3: self.removing_diagonal_obstacles    = True
         elif self.level == 4: self.removing_seeker_obstacles      = True
+        self._spawn_level_door()  # portal appears immediately as enemies begin despawning
 
     def _spawn_level_door(self):
         """Spawn the exit portal on a random wall edge."""
@@ -230,8 +231,6 @@ class Game:
                 self.particle_effects.append(ParticleEffect(obstacle_to_remove.x, obstacle_to_remove.y, "obstacle_static", is_spawning=False))
             else:
                 self.removing_static_obstacles = False
-                if self.level_clearing:
-                    self._spawn_level_door()
 
         # Handle orthogonal obstacle removal with dust particles
         if self.removing_orthogonal_obstacles and self.frame_counter % C.MOVING_OBSTACLE_REMOVAL_INTERVAL == 0:
@@ -245,8 +244,6 @@ class Game:
                 self.particle_effects.append(ParticleEffect(obstacle_to_remove.x, obstacle_to_remove.y, "obstacle_orthogonal", is_spawning=False))
             else:
                 self.removing_orthogonal_obstacles = False
-                if self.level_clearing:
-                    self._spawn_level_door()
 
         # Handle diagonal obstacle removal with dust particles
         if self.removing_diagonal_obstacles and self.frame_counter % C.MOVING_OBSTACLE_REMOVAL_INTERVAL == 0:
@@ -262,8 +259,6 @@ class Game:
                 self.particle_effects.append(ParticleEffect(obstacle_to_remove.x, obstacle_to_remove.y, "obstacle_diagonal", is_spawning=False))
             else:
                 self.removing_diagonal_obstacles = False
-                if self.level_clearing:
-                    self._spawn_level_door()
 
         # Handle seeker obstacle removal with dust particles (transition 4 → 5)
         if self.removing_seeker_obstacles and self.frame_counter % C.MOVING_OBSTACLE_REMOVAL_INTERVAL == 0:
@@ -276,8 +271,6 @@ class Game:
                 self.particle_effects.append(ParticleEffect(int(obstacle_to_remove.float_x), int(obstacle_to_remove.float_y), "obstacle_seeker", is_spawning=False))
             else:
                 self.removing_seeker_obstacles = False
-                if self.level_clearing:
-                    self._spawn_level_door()
 
         # Tick door animations
         if self.level_door:
@@ -404,7 +397,8 @@ class Game:
     def _start_level_exit(self):
         """Begin the portal exit animation.
         The snake continues moving naturally (move() called each tick);
-        segments that have passed through the portal are simply not rendered."""
+        segments that have passed through the portal are simply not rendered.
+        Game speed is cranked up so the crawl-through feels snappy."""
         self.exit_original_length  = len(self.snake.positions)
         self.exit_consumed         = 0
         self.exit_segments_left    = self.exit_original_length
@@ -412,6 +406,7 @@ class Game:
         self.snake.exit_mode       = True
         self.snake.exit_original_n = self.exit_original_length
         self.snake.exit_consumed   = 0
+        self.game_speed            = C.EXIT_ANIMATION_SPEED
 
     def _calc_level_clear_bonus(self, elapsed):
         overtime = max(0, elapsed - C.LEVEL_CLEAR_BONUS_DECAY)
@@ -446,6 +441,11 @@ class Game:
         self.level_clearing     = False
         self.level_door         = None
         self.level_exiting      = False
+        self.removing_static_obstacles     = False
+        self.removing_orthogonal_obstacles = False
+        self.removing_diagonal_obstacles   = False
+        self.removing_seeker_obstacles     = False
+        self.game_speed         = self.base_speed
         self.obstacle_hit_cooldowns.clear()
         self.active_buffs.clear()
         self.obstacles.clear()
@@ -621,6 +621,9 @@ class Game:
                 self._add_magic_apple(force_type=self.test_buff)
             elif random.random() < C.MAGIC_APPLE_SPAWN_PROBABILITY:
                 self._add_magic_apple()
+
+            # Check immediately so apple_visible is set before draw() runs this frame
+            self._check_for_level_up()
 
         # Snake eating magic apple
         for magic_apple in list(self.magic_apples):

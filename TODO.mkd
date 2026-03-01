@@ -1,6 +1,8 @@
 # ProjectSnake - TODO List
 
 ## Current Tasks
+- add a sound when snake enters the portal - whooshing sound
+- add a sound when being in the menus (e.g. level clear, death screen) - it must softly blind out when the game starts again
 - Each individual level has a different background theme (e.g. forest theme, beach theme etc.)
 
 
@@ -9,6 +11,9 @@
 - Randomly generate a bonus level with an extra door where the snacke transforms into a rabbit that has to eat carrots. The rabbit is hopping instead of sliding, and the enemies are birds. The rabbit makes jumps of 2 cells instead of 1.
 
 ## Completed Tasks
+- Portal spawns immediately when obstacle despawning begins (no wait time after last apple).
+- Snake speeds up significantly when its head enters the exit portal.
+- Apple flash on level-clear fixed: level-up check runs immediately after apple eaten so apple_visible=False before draw().
 - Level door portal system: clearing all obstacles spawns a cyan portal; snake must enter it to advance; between-level stats screen shows time bonus; snake enters next level via a new entry portal.
 - Time bonus awarded for fast level completion (20 pts max, grace period then decay).
 - Apple hidden and obstacle spawning paused during the level-clear/door/exit sequence.
