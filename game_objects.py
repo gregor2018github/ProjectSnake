@@ -235,12 +235,22 @@ def _draw_beveled_rect(surface, color, rect):
         pygame.draw.rect(surface, light, inner)
 
 class Obstacle(GameObject):
-    """ Represents an obstacle """
-    def __init__(self, x, y):
+    """ Represents an obstacle. May occupy 1–3 cells depending on its shape. """
+    def __init__(self, x, y, shape=None):
         super().__init__(x, y, C.OBSTACLE_SIZE[0], C.OBSTACLE_SIZE[1], C.OBSTACLE_COLOR)
+        if shape is None:
+            shape = [(0, 0)]
+        self.shape = shape
+        self.cells = [(x + dx, y + dy) for (dx, dy) in shape]
+        self.rects = [
+            pygame.Rect(cx * C.GRID_SIZE, cy * C.GRID_SIZE, C.GRID_SIZE, C.GRID_SIZE)
+            for (cx, cy) in self.cells
+        ]
+        self.rect = self.rects[0]  # kept for backward-compat; first cell only
 
     def draw(self, surface):
-        _draw_beveled_rect(surface, self.color, self.rect)
+        for rect in self.rects:
+            _draw_beveled_rect(surface, self.color, rect)
 
 class MovingObstacle(GameObject):
     """ Represents a moving obstacle """
@@ -253,6 +263,14 @@ class MovingObstacle(GameObject):
         # Initialize float_x/y based on the initial grid position x/y
         self.float_x = float(x)
         self.float_y = float(y)
+        # Shape: list of (dx, dy) offsets from the anchor (float_x, float_y).
+        # Single-cell by default; OrthogonalMovingObstacle overrides this.
+        self.shape = [(0, 0)]
+
+    @property
+    def cells(self):
+        """Grid positions currently occupied by all shape cells."""
+        return [(int(self.float_x) + dx, int(self.float_y) + dy) for (dx, dy) in self.shape]
 
     def update(self, snake, obstacles):
         # Update the floating position
@@ -308,56 +326,73 @@ class MovingObstacle(GameObject):
         collided_with_body = False
         for seg_x, seg_y in snake.get_body_positions():
             segment_rect = pygame.Rect(seg_x * C.GRID_SIZE, seg_y * C.GRID_SIZE, C.GRID_SIZE, C.GRID_SIZE)
-            if obstacle_rect.colliderect(segment_rect):
-                # Bounce off snake body
-                self.dx = -self.dx
-                self.dy = -self.dy
-                # Optional: Move slightly away after bounce to prevent sticking
-                self.float_x += self.dx * 0.1
-                self.float_y += self.dy * 0.1
-                collided_with_body = True
-                break # Only bounce once per frame
-
-        # Check collision with regular obstacles using grid coordinates (or rect collision if preferred)
-        if not collided_with_body: # Avoid double collision checks if already bounced off snake
-            static_obstacles = [ob for ob in obstacles if isinstance(ob, Obstacle)]
-            for obstacle in static_obstacles:
-                # Using rect collision for consistency, though grid check might suffice here
-                if obstacle_rect.colliderect(obstacle.rect):
-                    # Bounce off obstacle
+            for (sdx, sdy) in self.shape:
+                cell_rect = pygame.Rect(
+                    (self.float_x + sdx) * C.GRID_SIZE,
+                    (self.float_y + sdy) * C.GRID_SIZE,
+                    C.GRID_SIZE, C.GRID_SIZE,
+                )
+                if cell_rect.colliderect(segment_rect):
                     self.dx = -self.dx
                     self.dy = -self.dy
-                    # Optional: Move slightly away
+                    self.float_x += self.dx * 0.1
+                    self.float_y += self.dy * 0.1
+                    collided_with_body = True
+                    break
+            if collided_with_body:
+                break
+
+        # Check collision with regular (static) obstacles
+        if not collided_with_body:
+            static_obstacles = [ob for ob in obstacles if isinstance(ob, Obstacle)]
+            for obstacle in static_obstacles:
+                hit = False
+                for (sdx, sdy) in self.shape:
+                    cell_rect = pygame.Rect(
+                        (self.float_x + sdx) * C.GRID_SIZE,
+                        (self.float_y + sdy) * C.GRID_SIZE,
+                        C.GRID_SIZE, C.GRID_SIZE,
+                    )
+                    for obs_rect in obstacle.rects:
+                        if cell_rect.colliderect(obs_rect):
+                            hit = True
+                            break
+                    if hit:
+                        break
+                if hit:
+                    self.dx = -self.dx
+                    self.dy = -self.dy
                     self.float_x += self.dx * 0.1
                     self.float_y += self.dy * 0.1
                     break
 
     def draw(self, surface):
-        # Draw based on the floating-point position for smooth movement
-        screen_x = self.float_x * C.GRID_SIZE
-        screen_y = self.float_y * C.GRID_SIZE
-        draw_rect = pygame.Rect(screen_x, screen_y, self.width, self.height)
-        _draw_beveled_rect(surface, self.color, draw_rect)
+        for (dx, dy) in self.shape:
+            draw_rect = pygame.Rect(
+                (self.float_x + dx) * C.GRID_SIZE,
+                (self.float_y + dy) * C.GRID_SIZE,
+                C.GRID_SIZE, C.GRID_SIZE,
+            )
+            _draw_beveled_rect(surface, self.color, draw_rect)
 
     def collides_with_snake_head(self, snake):
-        # Use rectangle collision based on screen coordinates
         head_x, head_y = snake.get_head_position()
         head_rect = pygame.Rect(head_x * C.GRID_SIZE, head_y * C.GRID_SIZE, C.GRID_SIZE, C.GRID_SIZE)
-
-        # Calculate obstacle's current screen rectangle
-        obstacle_screen_x = self.float_x * C.GRID_SIZE
-        obstacle_screen_y = self.float_y * C.GRID_SIZE
-        obstacle_rect = pygame.Rect(obstacle_screen_x, obstacle_screen_y, self.width, self.height)
-
-        return obstacle_rect.colliderect(head_rect)
+        for (dx, dy) in self.shape:
+            cell_rect = pygame.Rect(
+                (self.float_x + dx) * C.GRID_SIZE,
+                (self.float_y + dy) * C.GRID_SIZE,
+                C.GRID_SIZE, C.GRID_SIZE,
+            )
+            if cell_rect.colliderect(head_rect):
+                return True
+        return False
 
 class OrthogonalMovingObstacle(MovingObstacle):
     """Represents an orthogonally moving obstacle"""
-    def __init__(self, x, y):
-        # Initialize with base class but override color
+    def __init__(self, x, y, shape=None):
         super().__init__(x, y)
         self.color = C.MOVING_OBSTACLE_COLOR_ORTHOGONAL
-        # override direction to be orthogonal
         orientation = random.choice(['horizontal', 'vertical'])
         speed = C.MOVING_OBSTACLE_SPEED
         if orientation == 'horizontal':
@@ -366,6 +401,8 @@ class OrthogonalMovingObstacle(MovingObstacle):
         else:
             self.dy = random.choice([-1, 1]) * speed
             self.dx = 0
+        # Use the caller-provided shape (spawn-validated) or pick one randomly
+        self.shape = shape if shape is not None else random.choice(C.OBSTACLE_SHAPES)
 
 
 class SeekerObstacle(MovingObstacle):

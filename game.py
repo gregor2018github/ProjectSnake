@@ -114,9 +114,11 @@ class Game:
 
     def _get_occupied_positions(self):
         """ Returns a list of grid coordinates occupied by the snake and obstacles. """
-        occupied = list(self.snake.positions) # Snake body positions
-        occupied.extend([(ob.x, ob.y) for ob in self.obstacles]) # Obstacle positions
-        occupied.extend([(mo.x, mo.y) for mo in self.moving_obstacles])  # Moving obstacle positions
+        occupied = list(self.snake.positions)
+        for ob in self.obstacles:
+            occupied.extend(ob.cells)          # all cells of multi-cell static obstacles
+        for mo in self.moving_obstacles:
+            occupied.extend(mo.cells)          # all cells of multi-cell moving obstacles
         return occupied
 
     def _create_initial_apple(self):
@@ -152,52 +154,58 @@ class Game:
     def _add_obstacle(self, obstacle_type="static", lifespan=None):
         """
         Adds a new obstacle of the specified type in a random, unoccupied grid location.
-
-        Args:
-            obstacle_type: String indicating the type of obstacle to create.
-                "static" - Static obstacle for level 1
-                "orthogonal" - Orthogonally moving obstacle for level 2
-                "diagonal" - Diagonally moving obstacle for level 3
-            lifespan: If set, the obstacle will despawn after this many ticks.
+        Static and orthogonal types pick a random multi-cell shape from OBSTACLE_SHAPES
+        and validate every cell before placing. Diagonal and seeker remain single-cell.
         """
-        # Map obstacle types to their classes and effect types
         obstacle_map = {
-            "static":     {"class": Obstacle,                    "effect_type": "obstacle_static",     "list": self.obstacles},
-            "orthogonal": {"class": OrthogonalMovingObstacle,   "effect_type": "obstacle_orthogonal", "list": self.moving_obstacles},
-            "diagonal":   {"class": MovingObstacle,              "effect_type": "obstacle_diagonal",   "list": self.moving_obstacles},
-            "seeker":     {"class": SeekerObstacle,              "effect_type": "obstacle_seeker",     "list": self.moving_obstacles},
+            "static":     {"class": Obstacle,                  "effect_type": "obstacle_static",     "list": self.obstacles},
+            "orthogonal": {"class": OrthogonalMovingObstacle,  "effect_type": "obstacle_orthogonal", "list": self.moving_obstacles},
+            "diagonal":   {"class": MovingObstacle,            "effect_type": "obstacle_diagonal",   "list": self.moving_obstacles},
+            "seeker":     {"class": SeekerObstacle,            "effect_type": "obstacle_seeker",     "list": self.moving_obstacles},
         }
-        
-        # Get the corresponding settings for this obstacle type
+
         obstacle_settings = obstacle_map.get(obstacle_type)
         if not obstacle_settings:
             print(f"Warning: Unknown obstacle type '{obstacle_type}'")
             return
-        
-        # Find a suitable location
+
+        use_shapes = obstacle_type in ("static", "orthogonal")
+
         while True:
             x = random.randint(0, C.GRID_WIDTH - 1)
             y = random.randint(0, C.GRID_HEIGHT - 1)
-            new_pos = (x, y)
-            
-            # Check against snake, existing obstacles, and the apple
+
             occupied = self._get_occupied_positions()
             occupied.append((self.apple.x, self.apple.y))
-            
-            # Get snake head position for distance check
+            occupied_set = set(occupied)
             head_x, head_y = self.snake.get_head_position()
-            
-            # Calculate Manhattan distance from snake head
-            distance_from_head = abs(x - head_x) + abs(y - head_y)
-            
-            if new_pos not in occupied and distance_from_head >= C.MIN_OBSTACLE_SPAWN_DISTANCE:
-                # Create the obstacle
-                obstacle = obstacle_settings["class"](x, y)
+
+            if use_shapes:
+                shape = random.choice(C.OBSTACLE_SHAPES)
+                all_cells = [(x + dx, y + dy) for (dx, dy) in shape]
+                valid = all(
+                    0 <= cx < C.GRID_WIDTH and 0 <= cy < C.GRID_HEIGHT
+                    and (cx, cy) not in occupied_set
+                    and abs(cx - head_x) + abs(cy - head_y) >= C.MIN_OBSTACLE_SPAWN_DISTANCE
+                    for (cx, cy) in all_cells
+                )
+            else:
+                shape = None
+                valid = (
+                    (x, y) not in occupied_set
+                    and abs(x - head_x) + abs(y - head_y) >= C.MIN_OBSTACLE_SPAWN_DISTANCE
+                )
+
+            if valid:
+                if obstacle_type == "static":
+                    obstacle = Obstacle(x, y, shape=shape)
+                elif obstacle_type == "orthogonal":
+                    obstacle = OrthogonalMovingObstacle(x, y, shape=shape)
+                else:
+                    obstacle = obstacle_settings["class"](x, y)
                 if lifespan is not None:
                     obstacle.lifespan = lifespan
-                # Add to the appropriate list
                 obstacle_settings["list"].append(obstacle)
-                # Create spawn effect
                 self.particle_effects.append(ParticleEffect(x, y, obstacle_settings["effect_type"], is_spawning=True))
                 break
 
@@ -675,7 +683,7 @@ class Game:
             for ob in self.obstacles:
                 if ob in self.obstacle_hit_cooldowns:
                     continue
-                if self.snake.collides_with_rect(ob.rect):
+                if any(self.snake.collides_with_rect(r) for r in ob.rects):
                     self.death_pos = (
                         ob.x * C.GRID_SIZE + C.GRID_SIZE // 2,
                         ob.y * C.GRID_SIZE + C.GRID_SIZE // 2,

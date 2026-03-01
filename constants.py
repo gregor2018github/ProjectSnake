@@ -31,10 +31,10 @@ PULSE_LIFESPAN = 15  # How many frames the pulse lasts
 PULSE_COUNT = 3  # Number of pulse circles per effect
 
 # Level System Constants
-LEVEL_2_APPLES = 10   # normal apples eaten to reach level 2
-LEVEL_3_APPLES = 20   # normal apples eaten to reach level 3
-LEVEL_4_APPLES = 35   # normal apples eaten to reach level 4 (seeker enemies)
-LEVEL_5_APPLES = 55   # normal apples eaten to reach the end-level (all types spawn randomly)
+LEVEL_2_APPLES = 15   # normal apples eaten to reach level 2
+LEVEL_3_APPLES = 35   # normal apples eaten to reach level 3
+LEVEL_4_APPLES = 50   # normal apples eaten to reach level 4 (seeker enemies)
+LEVEL_5_APPLES = 70   # normal apples eaten to reach the end-level (all types spawn randomly)
 OBSTACLE_REMOVAL_INTERVAL = 4 # every x ticks one obstacle is removed
 MOVING_OBSTACLE_REMOVAL_INTERVAL = 4 # ticks between removing orthogonal obstacles
 
@@ -101,6 +101,17 @@ BUFF_DISPLAY_NAMES = {
 # Obstacle Constants
 OBSTACLE_COLOR = (100, 100, 100)  # Gray
 OBSTACLE_SIZE = (GRID_SIZE, GRID_SIZE)
+# Obstacle shape templates: (dx, dy) offsets from the anchor cell.
+# Used for level-1 static and level-2 orthogonal obstacles (1–3 cells).
+OBSTACLE_SHAPES = [
+    [(0, 0)],                           # 1 block
+    [(0, 0), (1, 0)],                  # 2 blocks horizontal
+    [(0, 0), (0, 1)],                  # 2 blocks vertical
+    [(0, 0), (1, 0), (0, 1)],         # L top-left
+    [(0, 0), (1, 0), (1, 1)],         # L top-right
+    [(0, 1), (1, 0), (1, 1)],         # L bottom-right
+    [(0, 0), (0, 1), (1, 1)],         # L bottom-left
+]
 MIN_OBSTACLE_SPAWN_DISTANCE = 5  # Minimum distance from the snake head to spawn obstacles
 OBSTACLE_HIT_COOLDOWN = 6       # Ticks before the same obstacle can drain another shield charge
 
