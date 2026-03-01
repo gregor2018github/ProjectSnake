@@ -590,6 +590,7 @@ class Game:
             self.combo_timer -= 1
             if self.combo_timer == 0:
                 self.combo_count = 0
+                self.current_streak = 0  # chain broken by slowness
 
         # Track time alive
         self.time_alive += 1
@@ -631,9 +632,12 @@ class Game:
             base_score = 2 if 'double_score' in self.active_buffs else 1
             self.score += base_score * combo_mult
             self.apples_eaten += 1
-            self.current_streak += 1
-            if self.current_streak > self.longest_streak:
-                self.longest_streak = self.current_streak
+            if combo_mult >= 2:
+                self.current_streak += 1
+                if self.current_streak > self.longest_streak:
+                    self.longest_streak = self.current_streak
+            else:
+                self.current_streak = 0  # first apple in a chain; no bonus yet
             if 'no_grow' not in self.active_buffs:
                 self.snake.grow()
             if self.apple_eat_sound:
@@ -986,13 +990,14 @@ class Game:
 
         # Build stats dict for the death screen
         stats = {
-            'apples':       self.apples_eaten,
-            'time_ticks':   self.time_alive,
-            'max_level':    self.max_level_reached,
-            'max_length':   self.max_snake_length,
-            'distance':     self.distance_traveled,
-            'magic_apples': self.magic_apples_eaten,
-            'max_combo':    self.max_combo,
+            'apples':          self.apples_eaten,
+            'time_ticks':      self.time_alive,
+            'max_level':       self.max_level_reached,
+            'max_length':      self.max_snake_length,
+            'distance':        self.distance_traveled,
+            'magic_apples':    self.magic_apples_eaten,
+            'max_combo':       self.max_combo,
+            'longest_streak':  self.longest_streak,
         }
 
         # Animated game-over screen – redraws each tick so waves animate

@@ -425,56 +425,57 @@ class Screen:
                                 (int(cx), int(cy)), int(radius), 2)
         self.surface.blit(overlay, (0, 0))
 
-    # ------------------------------------------------------------------ stat cards
+    # ------------------------------------------------------------------ stat table
     def _draw_stat_cards(self, stats, y_top):
-        """2 rows x 3 columns of labelled stat cards."""
+        """Full-width two-column stat table: label left, coloured value right."""
         dist = stats['distance']
         dist_str = f"{dist / 1000:.1f}k cells" if dist >= 1000 else f"{dist} cells"
-        cards = [
-            ('Peak Size',  f"{stats['max_length']} seg"),
-            ('Apples',     str(stats['apples'])),
-            ('Distance',   dist_str),
-            ('Power-ups',  str(stats['magic_apples'])),
-            ('Survived',   f"{stats['time_ticks'] // 10}s"),
-            ('Max Level',  str(stats['max_level'])),
+        rows = [
+            ('Playtime',       f"{stats['time_ticks'] // 10}s",       (200, 200, 230)),
+            ('Apples Eaten',   str(stats['apples']),                   (110, 230, 110)),
+            ('Magic Apples',   str(stats['magic_apples']),             (255, 215,  70)),
+            ('Cells Traveled', dist_str,                               (200, 200, 230)),
+            ('Longest Streak', str(stats.get('longest_streak', 0)),    ( 90, 200, 255)),
+            ('Peak Length',    f"{stats['max_length']} cells",         (200, 200, 230)),
+            ('Max Level',      str(stats['max_level']),                (200, 150, 255)),
         ]
-        cols           = 3
-        card_w, card_h = 172, 36
-        gap_x, gap_y   = 12, 8
-        total_w = cols * card_w + (cols - 1) * gap_x
-        start_x = (C.SCREEN_WIDTH - total_w) // 2
+        row_h  = 26
+        pad_l  = 48
+        pad_r  = 554
 
-        for i, (label, value) in enumerate(cards):
-            col = i % cols
-            row = i // cols
-            x = start_x + col * (card_w + gap_x)
-            y = y_top   + row * (card_h + gap_y)
-            rect = pygame.Rect(x, y, card_w, card_h)
+        for i, (label, value, vcol) in enumerate(rows):
+            y_row = y_top + i * row_h
+            cy_row = y_row + row_h // 2
 
-            bg = self._alpha_surface(card_w, card_h, (18, 18, 48, 190))
-            self.surface.blit(bg, rect)
-            pygame.draw.rect(self.surface, C.PANEL_BORDER_COLOR, rect, 1)
+            if i % 2 == 0:
+                row_bg = self._alpha_surface(542, row_h, (18, 18, 52, 90))
+                self.surface.blit(row_bg, (29, y_row))
 
             lsurf = self.prompt_font.render(label, True, C.TEXT_DIM_COLOR)
-            self.surface.blit(lsurf, lsurf.get_rect(midleft=(rect.x + 10, rect.centery)))
+            vsurf = self.hs_entry_font.render(value, True, vcol)
+            self.surface.blit(lsurf, lsurf.get_rect(midleft=(pad_l, cy_row)))
+            self.surface.blit(vsurf, vsurf.get_rect(midright=(pad_r, cy_row)))
 
-            vsurf = self.hs_entry_font.render(value, True, C.TEXT_COLOR)
-            self.surface.blit(vsurf, vsurf.get_rect(midright=(rect.right - 10, rect.centery)))
+            if i < len(rows) - 1:
+                pygame.draw.line(self.surface, (38, 38, 68),
+                                 (29, y_row + row_h - 1), (571, y_row + row_h - 1))
 
     # ------------------------------------------------------------------ HS section
     def _draw_hs_section(self, high_scores, highlight_pos, y_title):
         """High-score list with title, medal colours, new-entry highlight."""
         cx = C.SCREEN_WIDTH // 2
         self._shadow_text(self.hs_title_font, 'HIGH  SCORES', C.HS_RANK_GOLD, (cx, y_title))
+        pygame.draw.line(self.surface, C.PANEL_BORDER_COLOR,
+                         (29, y_title + 13), (571, y_title + 13), 1)
         medal   = [C.HS_RANK_GOLD, C.HS_RANK_SILVER, C.HS_RANK_BRONZE]
-        entry_y = y_title + 26
-        row_h   = 28
+        entry_y = y_title + 36
+        row_h   = 26
 
         for i, (name, hs_score) in enumerate(high_scores):
             if i == highlight_pos:
                 color   = C.HS_HIGHLIGHT
-                row_bg  = self._alpha_surface(524, row_h - 2, (80, 80, 0, 100))
-                self.surface.blit(row_bg, (38, entry_y + i * row_h - row_h // 2 + 1))
+                row_bg  = self._alpha_surface(544, row_h - 2, (80, 80, 0, 100))
+                self.surface.blit(row_bg, (28, entry_y + i * row_h - row_h // 2 + 1))
             elif i < 3:
                 color = medal[i]
             else:
@@ -493,7 +494,7 @@ class Screen:
         """Two styled keyboard-hint buttons that pulse to signal interactivity.
         Returns (restart_rect, quit_rect) for mouse hit-testing."""
         pulse = int(160 + 80 * math.sin(tick * 0.15))   # 80-240
-        cy    = 492
+        cy    = 512
         btn_h = 36
         btn_w = 170
         mouse = pygame.mouse.get_pos()
@@ -527,31 +528,31 @@ class Screen:
         # 1. Animated grid background
         self._draw_ripple_grid()
 
-        # 2. Main translucent panel
-        panel = pygame.Rect(18, 14, 564, 454)
+        # 2. Main translucent panel  (taller to accommodate the expanded stat table)
+        panel = pygame.Rect(14, 10, 572, 474)
         self._panel(panel, (8, 8, 22, 235), C.PANEL_BORDER_COLOR)
 
         # 3. "GAME  OVER" title
-        self._shadow_text(self.title_font, 'GAME  OVER', C.GAMEOVER_TITLE_COLOR, (cx, 60))
+        self._shadow_text(self.title_font, 'GAME  OVER', C.GAMEOVER_TITLE_COLOR, (cx, 52))
 
         # 4. Score (+ best combo badge when the player achieved one)
         max_combo = stats.get('max_combo', 0)
         score_text = f'Score   {score}'
         if max_combo >= 2:
             score_text += f'     \u00d7{max_combo} best combo'
-        self._shadow_text(self.score_font, score_text, C.GAMEOVER_SCORE_COLOR, (cx, 108))
+        self._shadow_text(self.score_font, score_text, C.GAMEOVER_SCORE_COLOR, (cx, 96))
 
         # 5. Thin divider
-        pygame.draw.line(self.surface, C.PANEL_BORDER_COLOR, (38, 130), (562, 130), 1)
+        pygame.draw.line(self.surface, C.PANEL_BORDER_COLOR, (29, 114), (571, 114), 1)
 
-        # 6. Stat cards (2 x 3)
-        self._draw_stat_cards(stats, y_top=138)
+        # 6. Stat table (7 rows × 26 px = 182 px → occupies y 122 – 304)
+        self._draw_stat_cards(stats, y_top=122)
 
         # 7. Thin divider
-        pygame.draw.line(self.surface, C.PANEL_BORDER_COLOR, (38, 222), (562, 222), 1)
+        pygame.draw.line(self.surface, C.PANEL_BORDER_COLOR, (29, 306), (571, 306), 1)
 
         # 8. High-score section
-        self._draw_hs_section(high_scores, highlight_pos, y_title=242)
+        self._draw_hs_section(high_scores, highlight_pos, y_title=320)
 
         # 9. Pulsing restart/quit buttons (below panel)
         restart_rect, quit_rect = self._draw_restart_buttons(tick)
